@@ -1,3 +1,37 @@
+// Constants
+const API_BASE_URL = 'http://localhost:8080';
+const API_ENDPOINTS = {
+    VERIFICATION_INITIATE: '/verification/initiate/email',
+    VERIFICATION_COMPLETE: '/verification/complete/email/'
+};
+
+const VALIDATION = {
+    OTP_LENGTH: 6,
+    REDIRECT_DELAY: 2000
+};
+
+const MESSAGES = {
+    EMAIL_REQUIRED: 'Please enter an email address',
+    EMAIL_INVALID: 'Please enter a valid email address',
+    EMAIL_SENT: 'Verification email sent successfully!',
+    OTP_REQUIRED: 'Please enter the verification code',
+    OTP_INVALID_LENGTH: 'Verification code must be 6 digits',
+    OTP_SUCCESS: 'Email verification completed successfully!',
+    RESEND_SUCCESS: 'Verification code resent successfully!',
+    RESEND_FAILED: 'Failed to resend verification code',
+    RESEND_ERROR: 'Error resending verification code',
+    CONNECTION_ERROR: 'Error: Unable to connect to the server. Make sure the API is running on localhost:8080',
+    RESEND_TEXT: "Didn't receive the code? Resend"
+};
+
+const BUTTON_STATES = {
+    SENDING: '<span class="loading"></span>Sending...',
+    VERIFYING: '<span class="loading"></span>Verifying...',
+    RESENDING: 'Resending...',
+    SEND_VERIFICATION: 'Send Verification',
+    VERIFY_CODE: 'Verify Code'
+};
+
 // Screen elements
 const emailScreen = document.getElementById('emailScreen');
 const otpScreen = document.getElementById('otpScreen');
@@ -27,25 +61,25 @@ emailForm.addEventListener('submit', async (e) => {
     const email = emailInput.value.trim();
 
     if (!email) {
-        showEmailMessage('Please enter an email address', 'error');
+        showEmailMessage(MESSAGES.EMAIL_REQUIRED, 'error');
         return;
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-        showEmailMessage('Please enter a valid email address', 'error');
+        showEmailMessage(MESSAGES.EMAIL_INVALID, 'error');
         return;
     }
 
     try {
         // Show loading state
         emailSubmitBtn.disabled = true;
-        emailSubmitBtn.innerHTML = '<span class="loading"></span>Sending...';
+        emailSubmitBtn.innerHTML = BUTTON_STATES.SENDING;
         hideEmailMessage();
 
         // Make API call
-        const response = await fetch('http://localhost:8080/verification/initiate/email', {
+        const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.VERIFICATION_INITIATE}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -56,21 +90,21 @@ emailForm.addEventListener('submit', async (e) => {
         if (response.ok) {
             currentEmail = email;
             showOtpScreen();
-            showEmailMessage('Verification email sent successfully!', 'success');
+            showEmailMessage(MESSAGES.EMAIL_SENT, 'success');
         } else {
             const errorText = await response.text();
             showEmailMessage(`Error: ${response.status} - ${errorText || 'Failed to send verification email'}`, 'error');
         }
     } catch (error) {
         if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            showEmailMessage('Error: Unable to connect to the server. Make sure the API is running on localhost:8080', 'error');
+            showEmailMessage(MESSAGES.CONNECTION_ERROR, 'error');
         } else {
             showEmailMessage(`Error: ${error.message}`, 'error');
         }
     } finally {
         // Reset button state
         emailSubmitBtn.disabled = false;
-        emailSubmitBtn.innerHTML = 'Send Verification';
+        emailSubmitBtn.innerHTML = BUTTON_STATES.SEND_VERIFICATION;
     }
 });
 
@@ -81,23 +115,23 @@ otpForm.addEventListener('submit', async (e) => {
     const otpValue = otpValueInput.value.trim();
 
     if (!otpValue) {
-        showOtpMessage('Please enter the verification code', 'error');
+        showOtpMessage(MESSAGES.OTP_REQUIRED, 'error');
         return;
     }
 
-    if (otpValue.length !== 6) {
-        showOtpMessage('Verification code must be 6 digits', 'error');
+    if (otpValue.length !== VALIDATION.OTP_LENGTH) {
+        showOtpMessage(MESSAGES.OTP_INVALID_LENGTH, 'error');
         return;
     }
 
     try {
         // Show loading state
         otpSubmitBtn.disabled = true;
-        otpSubmitBtn.innerHTML = '<span class="loading"></span>Verifying...';
+        otpSubmitBtn.innerHTML = BUTTON_STATES.VERIFYING;
         hideOtpMessage();
 
         // Make API call
-        const response = await fetch('http://localhost:8080/verification/complete/email/', {
+        const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.VERIFICATION_COMPLETE}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -109,25 +143,25 @@ otpForm.addEventListener('submit', async (e) => {
         });
 
         if (response.ok) {
-            showOtpMessage('Email verification completed successfully!', 'success');
+            showOtpMessage(MESSAGES.OTP_SUCCESS, 'success');
             // You might want to redirect or show a success screen here
             setTimeout(() => {
                 resetToEmailScreen();
-            }, 2000);
+            }, VALIDATION.REDIRECT_DELAY);
         } else {
             const errorText = await response.text();
             showOtpMessage(`Error: ${response.status} - ${errorText || 'Invalid verification code'}`, 'error');
         }
     } catch (error) {
         if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            showOtpMessage('Error: Unable to connect to the server. Make sure the API is running on localhost:8080', 'error');
+            showOtpMessage(MESSAGES.CONNECTION_ERROR, 'error');
         } else {
             showOtpMessage(`Error: ${error.message}`, 'error');
         }
     } finally {
         // Reset button state
         otpSubmitBtn.disabled = false;
-        otpSubmitBtn.innerHTML = 'Verify Code';
+        otpSubmitBtn.innerHTML = BUTTON_STATES.VERIFY_CODE;
     }
 });
 
@@ -142,9 +176,9 @@ resendLink.addEventListener('click', async (e) => {
 
     try {
         resendLink.style.pointerEvents = 'none';
-        resendLink.textContent = 'Resending...';
+        resendLink.textContent = BUTTON_STATES.RESENDING;
 
-        const response = await fetch('http://localhost:8080/verification/initiate/email', {
+        const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.VERIFICATION_INITIATE}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -153,15 +187,15 @@ resendLink.addEventListener('click', async (e) => {
         });
 
         if (response.ok) {
-            showOtpMessage('Verification code resent successfully!', 'success');
+            showOtpMessage(MESSAGES.RESEND_SUCCESS, 'success');
         } else {
-            showOtpMessage('Failed to resend verification code', 'error');
+            showOtpMessage(MESSAGES.RESEND_FAILED, 'error');
         }
     } catch (error) {
-        showOtpMessage('Error resending verification code', 'error');
+        showOtpMessage(MESSAGES.RESEND_ERROR, 'error');
     } finally {
         resendLink.style.pointerEvents = 'auto';
-        resendLink.textContent = "Didn't receive the code? Resend";
+        resendLink.textContent = MESSAGES.RESEND_TEXT;
     }
 });
 
