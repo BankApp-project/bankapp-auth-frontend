@@ -686,11 +686,8 @@ function handleLoginSuccess(accessToken, refreshToken) {
     showOtpMessage(MESSAGES.AUTHENTICATION_SUCCESS, 'success');
     
     // Show login welcome screen after successful login
-    console.log('Setting timeout for login welcome screen after', VALIDATION.REDIRECT_DELAY, 'ms');
-    setTimeout(() => {
-        console.log('Showing login welcome screen after successful login');
-        showLoginWelcomeScreen();
-    }, VALIDATION.REDIRECT_DELAY);
+    console.log('Showing login welcome screen after successful login');
+    showLoginWelcomeScreen();
 }
 
 
