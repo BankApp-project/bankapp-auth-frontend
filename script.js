@@ -4,7 +4,8 @@ const API_ENDPOINTS = {
     VERIFICATION_INITIATE: '/verification/initiate/email',
     VERIFICATION_COMPLETE: '/verification/complete/email/',
     REGISTRATION_COMPLETE: '/registration/complete',
-    AUTHENTICATION_COMPLETE: '/authentication/complete'
+    AUTHENTICATION_COMPLETE: '/authentication/complete',
+    AUTHENTICATION_INITIATE: '/authentication/initiate'
 };
 
 const VALIDATION = {
@@ -49,6 +50,8 @@ const BUTTON_STATES = {
 const startScreen = document.getElementById('startScreen');
 const emailScreen = document.getElementById('emailScreen');
 const otpScreen = document.getElementById('otpScreen');
+const registrationWelcomeScreen = document.getElementById('registrationWelcomeScreen');
+const loginWelcomeScreen = document.getElementById('loginWelcomeScreen');
 
 // Email form elements
 const emailForm = document.getElementById('emailForm');
@@ -69,20 +72,91 @@ const resendLink = document.getElementById('resendLink');
 // Start screen elements
 const continueBtn = document.getElementById('continueBtn');
 
+
 let currentEmail = '';
 
-// Cookie utility function
+// Cookie utility functions
 function setCookie(name, value, days = 365) {
     const expires = new Date();
     expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
     document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
 }
 
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+}
+
 // Continue button functionality
-continueBtn.addEventListener('click', () => {
+continueBtn.addEventListener('click', async () => {
     console.log('Continue button clicked');
-    showEmailScreen();
+    
+    // Check if user is known (has knownUser cookie set to true)
+    const knownUser = getCookie('knownUser');
+    console.log('knownUser cookie value:', knownUser);
+    
+    if (knownUser === 'true') {
+        console.log('Known user detected, initiating passkey login flow');
+        await handleKnownUserLogin();
+    } else {
+        console.log('Unknown user, proceeding with email verification');
+        showEmailScreen();
+    }
 });
+
+// Handle known user login flow
+async function handleKnownUserLogin() {
+    console.log('Starting known user login flow');
+    
+    try {
+        // Show loading state on continue button
+        continueBtn.disabled = true;
+        continueBtn.innerHTML = '<span class="loading"></span>Authenticating...';
+        
+        // Make API call to authentication/initiate
+        console.log('Sending authentication initiate request to:', `${API_BASE_URL}${API_ENDPOINTS.AUTHENTICATION_INITIATE}`);
+        const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.AUTHENTICATION_INITIATE}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        console.log('Authentication initiate response status:', response.status);
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Authentication initiate successful, response data:', data);
+            
+            // Use the existing passkey login function with the response data
+            await handlePasskeyLogin(data.sessionId, data.loginOptions);
+        } else {
+            const errorText = await response.text();
+            console.log('Authentication initiate failed:', response.status, errorText);
+            
+            // If authentication initiate fails, fall back to email verification
+            console.log('Falling back to email verification');
+            showEmailScreen();
+        }
+    } catch (error) {
+        console.error('Known user login failed:', error);
+        
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            console.log('Connection error during known user login');
+        } else {
+            console.log('General error during known user login:', error.message);
+        }
+        
+        // Fall back to email verification on error
+        console.log('Falling back to email verification due to error');
+        showEmailScreen();
+    } finally {
+        // Reset button state
+        continueBtn.disabled = false;
+        continueBtn.innerHTML = 'Continue';
+    }
+}
 
 // Email form submission
 emailForm.addEventListener('submit', async (e) => {
@@ -310,6 +384,8 @@ function showOtpScreen() {
 function resetToEmailScreen() {
     console.log('Resetting to email screen');
     otpScreen.classList.remove('active');
+    registrationWelcomeScreen.classList.remove('active');
+    loginWelcomeScreen.classList.remove('active');
     emailScreen.classList.add('active');
 
     // Reset OTP form
@@ -340,6 +416,27 @@ function showOtpMessage(text, type) {
 function hideOtpMessage() {
     otpMessageDiv.style.display = 'none';
 }
+
+// Show registration welcome screen
+function showRegistrationWelcomeScreen() {
+    console.log('Switching to registration welcome screen');
+    startScreen.classList.remove('active');
+    emailScreen.classList.remove('active');
+    otpScreen.classList.remove('active');
+    loginWelcomeScreen.classList.remove('active');
+    registrationWelcomeScreen.classList.add('active');
+}
+
+// Show login welcome screen
+function showLoginWelcomeScreen() {
+    console.log('Switching to login welcome screen');
+    startScreen.classList.remove('active');
+    emailScreen.classList.remove('active');
+    otpScreen.classList.remove('active');
+    registrationWelcomeScreen.classList.remove('active');
+    loginWelcomeScreen.classList.add('active');
+}
+
 
 // Clear email message when user starts typing
 emailInput.addEventListener('input', hideEmailMessage);
@@ -461,13 +558,11 @@ function handleRegistrationSuccess(accessToken, refreshToken) {
 
     showOtpMessage(MESSAGES.REGISTRATION_SUCCESS, 'success');
 
-    // Redirect or update UI after successful registration
-    console.log('Setting timeout for redirect after', VALIDATION.REDIRECT_DELAY, 'ms');
+    // Show registration welcome screen after successful registration
+    console.log('Setting timeout for registration welcome screen after', VALIDATION.REDIRECT_DELAY, 'ms');
     setTimeout(() => {
-        // For now, just reset to email screen
-        // In a real app, you'd probably redirect to a dashboard
-        console.log('Redirecting after successful registration');
-        resetToEmailScreen();
+        console.log('Showing registration welcome screen after successful registration');
+        showRegistrationWelcomeScreen();
     }, VALIDATION.REDIRECT_DELAY);
 }
 
@@ -590,13 +685,11 @@ function handleLoginSuccess(accessToken, refreshToken) {
     
     showOtpMessage(MESSAGES.AUTHENTICATION_SUCCESS, 'success');
     
-    // Redirect or update UI after successful login
-    console.log('Setting timeout for redirect after', VALIDATION.REDIRECT_DELAY, 'ms');
+    // Show login welcome screen after successful login
+    console.log('Setting timeout for login welcome screen after', VALIDATION.REDIRECT_DELAY, 'ms');
     setTimeout(() => {
-        // For now, just reset to email screen
-        // In a real app, you'd probably redirect to a dashboard
-        console.log('Redirecting after successful login');
-        resetToEmailScreen();
+        console.log('Showing login welcome screen after successful login');
+        showLoginWelcomeScreen();
     }, VALIDATION.REDIRECT_DELAY);
 }
 

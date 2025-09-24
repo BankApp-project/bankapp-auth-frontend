@@ -200,3 +200,31 @@ input:disabled {
 .resend-link:hover {
     text-decoration: underline;
 }
+
+/* Welcome Screen Styles */
+.welcome-content {
+    text-align: center;
+}
+
+.welcome-title {
+    font-size: 32px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 15px;
+}
+
+.welcome-message {
+    background: linear-gradient(135deg, #e8f5e8 0%, #f0f8ff 100%);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 25px 0;
+    border-left: 4px solid #667eea;
+}
+
+.welcome-message p {
+    color: #555;
+    line-height: 1.6;
+    margin: 0;
+}
