@@ -614,20 +614,37 @@ async function handlePasskeyLogin(sessionId, loginOptions) {
     } catch (error) {
         console.error('Passkey authentication failed:', error);
         
+        let errorMessage;
         if (error.name === 'NotAllowedError') {
             console.log('Passkey authentication not allowed by user');
-            showOtpMessage(MESSAGES.PASSKEY_CANCELLED, 'error');
+            errorMessage = MESSAGES.PASSKEY_CANCELLED;
         } else if (error.name === 'NotSupportedError') {
             console.log('Passkey not supported');
-            showOtpMessage(MESSAGES.PASSKEY_NOT_SUPPORTED, 'error');
+            errorMessage = MESSAGES.PASSKEY_NOT_SUPPORTED;
         } else {
             console.log('General passkey authentication error:', error.message);
-            showOtpMessage(MESSAGES.PASSKEY_FAILED, 'error');
+            errorMessage = MESSAGES.PASSKEY_FAILED;
+        }
+        
+        // Show error message on email screen after redirecting if we're on start screen, otherwise on OTP screen
+        if (startScreen.classList.contains('active')) {
+            console.log('Fallback to email flow after passkey error');
+            showEmailScreen();
+            showEmailMessage(errorMessage, 'error');
+        } else {
+            showOtpMessage(errorMessage, 'error');
         }
     } finally {
         // Reset button state
-        otpSubmitBtn.disabled = false;
-        otpSubmitBtn.innerHTML = BUTTON_STATES.VERIFY_CODE;
+        if (otpSubmitBtn) {
+            otpSubmitBtn.disabled = false;
+            otpSubmitBtn.innerHTML = BUTTON_STATES.VERIFY_CODE;
+        }
+        // Reset continue button state if we're on start screen
+        if (startScreen.classList.contains('active')) {
+            continueBtn.disabled = false;
+            continueBtn.innerHTML = 'Continue';
+        }
     }
 }
 
