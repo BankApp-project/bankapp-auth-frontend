@@ -71,6 +71,13 @@ const continueBtn = document.getElementById('continueBtn');
 
 let currentEmail = '';
 
+// Cookie utility function
+function setCookie(name, value, days = 365) {
+    const expires = new Date();
+    expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+    document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+}
+
 // Continue button functionality
 continueBtn.addEventListener('click', () => {
     console.log('Continue button clicked');
@@ -447,9 +454,13 @@ function handleRegistrationSuccess(accessToken, refreshToken) {
     // Store tokens (you might want to use sessionStorage or localStorage)
     console.log('Registration successful. Tokens received:', { accessToken, refreshToken });
     console.log('Handling registration success');
-    
+
+    // Set knownUser cookie
+    setCookie('knownUser', 'true');
+    console.log('knownUser cookie set to true');
+
     showOtpMessage(MESSAGES.REGISTRATION_SUCCESS, 'success');
-    
+
     // Redirect or update UI after successful registration
     console.log('Setting timeout for redirect after', VALIDATION.REDIRECT_DELAY, 'ms');
     setTimeout(() => {
@@ -572,6 +583,10 @@ function handleLoginSuccess(accessToken, refreshToken) {
     // Store tokens (you might want to use sessionStorage or localStorage)
     console.log('Login successful. Tokens received:', { accessToken, refreshToken });
     console.log('Handling login success');
+    
+    // Set knownUser cookie
+    setCookie('knownUser', 'true');
+    console.log('knownUser cookie set to true');
     
     showOtpMessage(MESSAGES.AUTHENTICATION_SUCCESS, 'success');
     
