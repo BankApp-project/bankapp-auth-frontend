@@ -3,7 +3,8 @@ const API_BASE_URL = 'http://localhost:8080';
 const API_ENDPOINTS = {
     VERIFICATION_INITIATE: '/verification/initiate/email',
     VERIFICATION_COMPLETE: '/verification/complete/email/',
-    REGISTRATION_COMPLETE: '/registration/complete'
+    REGISTRATION_COMPLETE: '/registration/complete',
+    AUTHENTICATION_COMPLETE: '/authentication/complete'
 };
 
 const VALIDATION = {
@@ -27,6 +28,9 @@ const MESSAGES = {
     PASSKEY_FAILED: 'Failed to create passkey. Please try again.',
     PASSKEY_CANCELLED: 'Passkey creation was cancelled.',
     PASSKEY_NOT_SUPPORTED: 'Passkeys are not supported on this device/browser.',
+    PASSKEY_AUTHENTICATING: 'Authenticating with your passkey...',
+    AUTHENTICATION_SUCCESS: 'Welcome back! You are now logged in.',
+    AUTHENTICATION_FAILED: 'Failed to authenticate. Please try again.',
     REGISTRATION_SUCCESS: 'Account created successfully! You are now logged in.',
     REGISTRATION_FAILED: 'Failed to complete registration. Please try again.'
 };
@@ -37,7 +41,8 @@ const BUTTON_STATES = {
     RESENDING: 'Resending...',
     SEND_VERIFICATION: 'Send Verification',
     VERIFY_CODE: 'Verify Code',
-    CREATING_PASSKEY: '<span class="loading"></span>Creating Passkey...'
+    CREATING_PASSKEY: '<span class="loading"></span>Creating Passkey...',
+    AUTHENTICATING_PASSKEY: '<span class="loading"></span>Authenticating...'
 };
 
 // Screen elements
@@ -185,10 +190,10 @@ otpForm.addEventListener('submit', async (e) => {
                 }, 1000);
             } else if (data.type === 'login') {
                 console.log('Login flow detected');
-                showOtpMessage('Existing user detected. Login flow not implemented yet.', 'info');
-                setTimeout(() => {
-                    resetToEmailScreen();
-                }, VALIDATION.REDIRECT_DELAY);
+                showOtpMessage(MESSAGES.OTP_SUCCESS, 'success');
+                setTimeout(async () => {
+                    await handlePasskeyLogin(data.sessionId, data.loginOptions);
+                }, 1000);
             } else {
                 console.log('Unexpected response type:', data.type);
                 showOtpMessage('Unexpected response from server.', 'error');
@@ -434,6 +439,131 @@ function handleRegistrationSuccess(accessToken, refreshToken) {
         // For now, just reset to email screen
         // In a real app, you'd probably redirect to a dashboard
         console.log('Redirecting after successful registration');
+        resetToEmailScreen();
+    }, VALIDATION.REDIRECT_DELAY);
+}
+
+// Passkey login function
+async function handlePasskeyLogin(sessionId, loginOptions) {
+    console.log('Starting passkey login with sessionId:', sessionId);
+    console.log('Login options:', loginOptions);
+    try {
+        // Check if WebAuthn is supported
+        if (!window.PublicKeyCredential) {
+            console.log('WebAuthn not supported');
+            showOtpMessage(MESSAGES.PASSKEY_NOT_SUPPORTED, 'error');
+            return;
+        }
+        console.log('WebAuthn is supported');
+
+        // Show loading state
+        otpSubmitBtn.disabled = true;
+        otpSubmitBtn.innerHTML = BUTTON_STATES.AUTHENTICATING_PASSKEY;
+        showOtpMessage(MESSAGES.PASSKEY_AUTHENTICATING, 'info');
+
+        // Parse request options from JSON (handles base64 to ArrayBuffer conversion)
+        console.log('Parsing request options');
+        const credentialRequestOptions = PublicKeyCredential.parseRequestOptionsFromJSON(loginOptions);
+        console.log('Parsed request options:', credentialRequestOptions);
+
+        // Get the credential
+        console.log('Getting credential...');
+        const credential = await navigator.credentials.get({
+            publicKey: credentialRequestOptions
+        });
+        console.log('Credential retrieved:', credential);
+
+        if (!credential) {
+            console.log('Credential retrieval returned null');
+            showOtpMessage(MESSAGES.PASSKEY_CANCELLED, 'error');
+            return;
+        }
+
+        // Convert credential to JSON format using official method
+        console.log('Converting credential to JSON format');
+        const authenticationResponseJSON = credential.toJSON();
+        console.log('Authentication response JSON:', authenticationResponseJSON);
+
+        // Complete authentication
+        console.log('Completing authentication...');
+        await completeAuthentication(sessionId, authenticationResponseJSON);
+
+    } catch (error) {
+        console.error('Passkey authentication failed:', error);
+        
+        if (error.name === 'NotAllowedError') {
+            console.log('Passkey authentication not allowed by user');
+            showOtpMessage(MESSAGES.PASSKEY_CANCELLED, 'error');
+        } else if (error.name === 'NotSupportedError') {
+            console.log('Passkey not supported');
+            showOtpMessage(MESSAGES.PASSKEY_NOT_SUPPORTED, 'error');
+        } else {
+            console.log('General passkey authentication error:', error.message);
+            showOtpMessage(MESSAGES.PASSKEY_FAILED, 'error');
+        }
+    } finally {
+        // Reset button state
+        otpSubmitBtn.disabled = false;
+        otpSubmitBtn.innerHTML = BUTTON_STATES.VERIFY_CODE;
+    }
+}
+
+// Complete authentication with the API
+async function completeAuthentication(sessionId, credentialResponse) {
+    console.log('Completing authentication with API for sessionId:', sessionId);
+    try {
+        console.log('Sending authentication completion request to:', `${API_BASE_URL}${API_ENDPOINTS.AUTHENTICATION_COMPLETE}`);
+        const requestBody = {
+            sessionId: sessionId,
+            AuthenticationResponseJSON: JSON.stringify(credentialResponse),
+            credentialId: credentialResponse.id
+        };
+        console.log('Request body:', requestBody);
+        
+        const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.AUTHENTICATION_COMPLETE}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestBody)
+        });
+        console.log('Authentication completion response status:', response.status);
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Authentication completed successfully, response data:', data);
+            handleLoginSuccess(data.accessToken, data.refreshToken);
+        } else {
+            const errorText = await response.text();
+            console.log('Authentication completion failed:', response.status, errorText);
+            showOtpMessage(`Authentication failed: ${errorText || 'Unknown error'}`, 'error');
+        }
+    } catch (error) {
+        console.error('Authentication completion failed:', error);
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            console.log('Connection error during authentication completion');
+            showOtpMessage(MESSAGES.CONNECTION_ERROR, 'error');
+        } else {
+            console.log('General authentication completion error:', error.message);
+            showOtpMessage(MESSAGES.AUTHENTICATION_FAILED, 'error');
+        }
+    }
+}
+
+// Handle successful login
+function handleLoginSuccess(accessToken, refreshToken) {
+    // Store tokens (you might want to use sessionStorage or localStorage)
+    console.log('Login successful. Tokens received:', { accessToken, refreshToken });
+    console.log('Handling login success');
+    
+    showOtpMessage(MESSAGES.AUTHENTICATION_SUCCESS, 'success');
+    
+    // Redirect or update UI after successful login
+    console.log('Setting timeout for redirect after', VALIDATION.REDIRECT_DELAY, 'ms');
+    setTimeout(() => {
+        // For now, just reset to email screen
+        // In a real app, you'd probably redirect to a dashboard
+        console.log('Redirecting after successful login');
         resetToEmailScreen();
     }, VALIDATION.REDIRECT_DELAY);
 }
