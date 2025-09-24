@@ -46,6 +46,7 @@ const BUTTON_STATES = {
 };
 
 // Screen elements
+const startScreen = document.getElementById('startScreen');
 const emailScreen = document.getElementById('emailScreen');
 const otpScreen = document.getElementById('otpScreen');
 
@@ -65,7 +66,16 @@ const emailDisplay = document.getElementById('emailDisplay');
 const backBtn = document.getElementById('backBtn');
 const resendLink = document.getElementById('resendLink');
 
+// Start screen elements
+const continueBtn = document.getElementById('continueBtn');
+
 let currentEmail = '';
+
+// Continue button functionality
+continueBtn.addEventListener('click', () => {
+    console.log('Continue button clicked');
+    showEmailScreen();
+});
 
 // Email form submission
 emailForm.addEventListener('submit', async (e) => {
@@ -270,6 +280,13 @@ otpValueInput.addEventListener('input', (e) => {
 });
 
 // Screen management functions
+function showEmailScreen() {
+    console.log('Switching to email screen');
+    startScreen.classList.remove('active');
+    emailScreen.classList.add('active');
+    emailInput.focus();
+}
+
 function showOtpScreen() {
     console.log('Switching to OTP screen for email:', currentEmail);
     emailScreen.classList.remove('active');
