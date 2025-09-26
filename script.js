@@ -557,13 +557,7 @@ function handleRegistrationSuccess(accessToken, refreshToken) {
     console.log('knownUser cookie set to true');
 
     showOtpMessage(MESSAGES.REGISTRATION_SUCCESS, 'success');
-
-    // Show registration welcome screen after successful registration
-    console.log('Setting timeout for registration welcome screen after', VALIDATION.REDIRECT_DELAY, 'ms');
-    setTimeout(() => {
-        console.log('Showing registration welcome screen after successful registration');
-        showRegistrationWelcomeScreen();
-    }, VALIDATION.REDIRECT_DELAY);
+    showRegistrationWelcomeScreen();
 }
 
 // Passkey login function
