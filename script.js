@@ -1,5 +1,5 @@
 // Constants
-const API_BASE_URL = 'http://localhost:8080';
+const API_BASE_URL = 'https://auth.bankapp.online/api';
 const API_ENDPOINTS = {
     VERIFICATION_INITIATE: '/verification/initiate/email',
     VERIFICATION_COMPLETE: '/verification/complete/email/',
