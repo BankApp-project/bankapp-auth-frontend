@@ -1,5 +1,8 @@
+// Import HTTP client for X-Correlation-ID support
+import httpClient from './httpClient.js';
+
 // Constants
-const API_BASE_URL = 'https://auth.bankapp.online/api';
+const API_BASE_URL = 'http://localhost:8080/api';
 const API_ENDPOINTS = {
     VERIFICATION_INITIATE: '/verification/initiate/email',
     VERIFICATION_COMPLETE: '/verification/complete/email/',
@@ -117,7 +120,7 @@ async function handleKnownUserLogin() {
         
         // Make API call to authentication/initiate
         console.log('Sending authentication initiate request to:', `${API_BASE_URL}${API_ENDPOINTS.AUTHENTICATION_INITIATE}`);
-        const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.AUTHENTICATION_INITIATE}`, {
+        const response = await httpClient.fetch(`${API_BASE_URL}${API_ENDPOINTS.AUTHENTICATION_INITIATE}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -190,7 +193,7 @@ emailForm.addEventListener('submit', async (e) => {
         // Make API call
         console.log('Sending verification request to:', `${API_BASE_URL}${API_ENDPOINTS.VERIFICATION_INITIATE}`);
         console.log('Request body:', {email: email});
-        const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.VERIFICATION_INITIATE}`, {
+        const response = await httpClient.fetch(`${API_BASE_URL}${API_ENDPOINTS.VERIFICATION_INITIATE}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -257,7 +260,7 @@ otpForm.addEventListener('submit', async (e) => {
         // Make API call
         console.log('Sending OTP verification request to:', `${API_BASE_URL}${API_ENDPOINTS.VERIFICATION_COMPLETE}`);
         console.log('Request body:', {email: currentEmail, otpValue: otpValue});
-        const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.VERIFICATION_COMPLETE}`, {
+        const response = await httpClient.fetch(`${API_BASE_URL}${API_ENDPOINTS.VERIFICATION_COMPLETE}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -326,7 +329,7 @@ resendLink.addEventListener('click', async (e) => {
         resendLink.textContent = BUTTON_STATES.RESENDING;
 
         console.log('Sending resend request to:', `${API_BASE_URL}${API_ENDPOINTS.VERIFICATION_INITIATE}`);
-        const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.VERIFICATION_INITIATE}`, {
+        const response = await httpClient.fetch(`${API_BASE_URL}${API_ENDPOINTS.VERIFICATION_INITIATE}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -516,7 +519,7 @@ async function completeRegistration(sessionId, credentialJSON) {
             RegistrationResponseJSON: JSON.stringify(credentialJSON)
         };
         console.log('Request body:', requestBody);
-        const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.REGISTRATION_COMPLETE}`, {
+        const response = await httpClient.fetch(`${API_BASE_URL}${API_ENDPOINTS.REGISTRATION_COMPLETE}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -653,8 +656,8 @@ async function completeAuthentication(sessionId, credentialResponse) {
             credentialId: credentialResponse.id
         };
         console.log('Request body:', requestBody);
-        
-        const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.AUTHENTICATION_COMPLETE}`, {
+
+        const response = await httpClient.fetch(`${API_BASE_URL}${API_ENDPOINTS.AUTHENTICATION_COMPLETE}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
