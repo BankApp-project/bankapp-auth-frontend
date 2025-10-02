@@ -69,43 +69,30 @@
 
     <!-- OTP Verification Screen -->
     <div id="otpScreen" class="screen">
-        <h1 class="title">Verify Code</h1>
         <p class="subtitle">We've sent a verification code to your email address</p>
 
         <div id="emailDisplay" class="email-display"></div>
 
         <form id="otpForm">
             <div class="form-group">
-                <label for="emailConfirm">Email Address</label>
-                <input
-                        type="email"
-                        id="emailConfirm"
-                        name="emailConfirm"
-                        required
-                        disabled
-                >
-            </div>
-
-            <div class="form-group">
-                <label for="otpValue">Verification Code</label>
                 <input
                         type="text"
                         id="otpValue"
                         name="otpValue"
                         required
-                        placeholder="Enter code from your mailbox"
+                        placeholder="Verification Code"
                         maxlength="6"
                         class="otp-input"
                         autocomplete="one-time-code"
                 >
             </div>
 
-            <button type="button" class="submit-btn back-btn" id="backBtn">
-                Back to Email
-            </button>
-
             <button type="submit" class="submit-btn" id="otpSubmitBtn">
                 Verify Code
+            </button>
+
+            <button type="button" class="submit-btn back-btn" id="backBtn">
+                Back to Email
             </button>
         </form>
 
