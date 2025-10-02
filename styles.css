@@ -234,3 +234,8 @@ input:disabled {
     justify-content: space-between;
     gap: 1rem;
 }
+
+/* Hide the checkbox row by default if the is-mobile class is present */
+.is-mobile .checkbox-row {
+    display: none;
+}
