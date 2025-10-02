@@ -77,9 +77,15 @@ const resendLink = document.getElementById('resendLink');
 const continueBtn = document.getElementById('continueBtn');
 const crossDeviceCheckbox = document.getElementById('crossDeviceCheckbox');
 const compatibilityCheckbox = document.getElementById('compatibilityCheckbox');
+const checkboxRow = document.querySelector('.checkbox-row');
 
 
 let currentEmail = '';
+
+// Hide checkbox row on mobile devices
+if (isMobileDevice() && checkboxRow) {
+    checkboxRow.style.display = 'none';
+}
 
 // Mutual exclusivity for checkboxes
 crossDeviceCheckbox.addEventListener('change', () => {
