@@ -117,6 +117,7 @@ input:disabled {
     background: transparent;
     color: #667eea;
     border: 2px solid #667eea;
+    margin-top: 25px;
     margin-bottom: 15px;
 }
 
