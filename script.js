@@ -75,33 +75,15 @@ const resendLink = document.getElementById('resendLink');
 
 // Start screen elements
 const continueBtn = document.getElementById('continueBtn');
-const crossDeviceCheckbox = document.getElementById('crossDeviceCheckbox');
-const compatibilityCheckbox = document.getElementById('compatibilityCheckbox');
 
+// Mobile device detection - uses class added by inline script in index.html
+const isMobile = document.documentElement.classList.contains('is-mobile');
 
 let currentEmail = '';
 
-// Mutual exclusivity for checkboxes
-crossDeviceCheckbox.addEventListener('change', () => {
-    if (crossDeviceCheckbox.checked) {
-        compatibilityCheckbox.checked = false;
-    }
-});
-
-compatibilityCheckbox.addEventListener('change', () => {
-    if (compatibilityCheckbox.checked) {
-        crossDeviceCheckbox.checked = false;
-    }
-});
-
-// Mobile device detection
-function isMobileDevice() {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-}
-
 // Get appropriate API base URL based on device type
 function getApiBaseUrl() {
-    return isMobileDevice() ? API_BASE_URL_MOBILE : API_BASE_URL;
+    return isMobile ? API_BASE_URL_MOBILE : API_BASE_URL;
 }
 
 // Cookie utility functions
