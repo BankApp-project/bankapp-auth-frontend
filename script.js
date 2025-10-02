@@ -75,9 +75,24 @@ const resendLink = document.getElementById('resendLink');
 
 // Start screen elements
 const continueBtn = document.getElementById('continueBtn');
+const crossDeviceCheckbox = document.getElementById('crossDeviceCheckbox');
+const compatibilityCheckbox = document.getElementById('compatibilityCheckbox');
 
 
 let currentEmail = '';
+
+// Mutual exclusivity for checkboxes
+crossDeviceCheckbox.addEventListener('change', () => {
+    if (crossDeviceCheckbox.checked) {
+        compatibilityCheckbox.checked = false;
+    }
+});
+
+compatibilityCheckbox.addEventListener('change', () => {
+    if (compatibilityCheckbox.checked) {
+        crossDeviceCheckbox.checked = false;
+    }
+});
 
 // Mobile device detection
 function isMobileDevice() {

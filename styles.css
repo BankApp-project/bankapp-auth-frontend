@@ -228,3 +228,9 @@ input:disabled {
     line-height: 1.6;
     margin: 0;
 }
+
+.checkbox-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
