@@ -69,7 +69,6 @@ const emailConfirmInput = document.getElementById('emailConfirm');
 const otpValueInput = document.getElementById('otpValue');
 const otpSubmitBtn = document.getElementById('otpSubmitBtn');
 const otpMessageDiv = document.getElementById('otpMessage');
-const emailDisplay = document.getElementById('emailDisplay');
 const backBtn = document.getElementById('backBtn');
 const resendLink = document.getElementById('resendLink');
 
