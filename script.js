@@ -408,7 +408,6 @@ function showOtpScreen() {
     otpScreen.classList.add('active');
 
     emailConfirmInput.value = currentEmail;
-    emailDisplay.textContent = `Code sent to: ${currentEmail}`;
     otpValueInput.focus();
 
     hideEmailMessage();
