@@ -76,9 +76,15 @@ const resendLink = document.getElementById('resendLink');
 // Start screen elements
 const continueBtn = document.getElementById('continueBtn');
 const compatibilityCheckbox = document.getElementById('compatibilityCheckbox');
+const crossDeviceCheckbox = document.getElementById('crossDeviceCheckbox');
 
 // Mobile device detection - uses class added by inline script in index.html
 const isMobile = document.documentElement.classList.contains('is-mobile');
+
+// Preselect cross-device checkbox for non-mobile users
+if (!isMobile) {
+    crossDeviceCheckbox.checked = true;
+}
 
 let currentEmail = '';
 
