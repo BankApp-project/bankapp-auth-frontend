@@ -50,6 +50,11 @@ const BUTTON_STATES = {
     AUTHENTICATING_PASSKEY: '<span class="loading"></span>Authenticating...'
 };
 
+// Mobile device detection (defined early to use immediately)
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
 // Screen elements
 const startScreen = document.getElementById('startScreen');
 const emailScreen = document.getElementById('emailScreen');
@@ -79,13 +84,12 @@ const crossDeviceCheckbox = document.getElementById('crossDeviceCheckbox');
 const compatibilityCheckbox = document.getElementById('compatibilityCheckbox');
 const checkboxRow = document.querySelector('.checkbox-row');
 
-
-let currentEmail = '';
-
-// Hide checkbox row on mobile devices
+// Hide checkbox row on mobile devices BEFORE page renders
 if (isMobileDevice() && checkboxRow) {
     checkboxRow.style.display = 'none';
 }
+
+let currentEmail = '';
 
 // Mutual exclusivity for checkboxes
 crossDeviceCheckbox.addEventListener('change', () => {
@@ -99,11 +103,6 @@ compatibilityCheckbox.addEventListener('change', () => {
         crossDeviceCheckbox.checked = false;
     }
 });
-
-// Mobile device detection
-function isMobileDevice() {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-}
 
 // Get appropriate API base URL based on device type
 function getApiBaseUrl() {
