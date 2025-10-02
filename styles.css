@@ -117,7 +117,7 @@ input:disabled {
     background: transparent;
     color: #667eea;
     border: 2px solid #667eea;
-    margin-bottom: 5px;
+    margin-bottom: 15px;
 }
 
 .back-btn:hover:not(:disabled) {
