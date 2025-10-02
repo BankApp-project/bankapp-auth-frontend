@@ -75,6 +75,7 @@ const resendLink = document.getElementById('resendLink');
 
 // Start screen elements
 const continueBtn = document.getElementById('continueBtn');
+const compatibilityCheckbox = document.getElementById('compatibilityCheckbox');
 
 // Mobile device detection - uses class added by inline script in index.html
 const isMobile = document.documentElement.classList.contains('is-mobile');
@@ -83,7 +84,10 @@ let currentEmail = '';
 
 // Get appropriate API base URL based on device type
 function getApiBaseUrl() {
-    return isMobile ? API_BASE_URL_MOBILE : API_BASE_URL;
+    if (isMobile || compatibilityCheckbox.checked) {
+        return API_BASE_URL_MOBILE;
+    }
+    return API_BASE_URL;
 }
 
 // Cookie utility functions
@@ -103,11 +107,11 @@ function getCookie(name) {
 // Continue button functionality
 continueBtn.addEventListener('click', async () => {
     console.log('Continue button clicked');
-    
+
     // Check if user is known (has knownUser cookie set to true)
     const knownUser = getCookie('knownUser');
     console.log('knownUser cookie value:', knownUser);
-    
+
     if (knownUser === 'true') {
         console.log('Known user detected, initiating passkey login flow');
         await handleKnownUserLogin();
@@ -120,12 +124,12 @@ continueBtn.addEventListener('click', async () => {
 // Handle known user login flow
 async function handleKnownUserLogin() {
     console.log('Starting known user login flow');
-    
+
     try {
         // Show loading state on continue button
         continueBtn.disabled = true;
         continueBtn.innerHTML = '<span class="loading"></span>Authenticating...';
-        
+
         // Make API call to authentication/initiate
         console.log('Sending authentication initiate request to:', `${getApiBaseUrl()}${API_ENDPOINTS.AUTHENTICATION_INITIATE}`);
         const response = await httpClient.fetch(`${getApiBaseUrl()}${API_ENDPOINTS.AUTHENTICATION_INITIATE}`, {
@@ -139,26 +143,26 @@ async function handleKnownUserLogin() {
         if (response.ok) {
             const data = await response.json();
             console.log('Authentication initiate successful, response data:', data);
-            
+
             // Use the existing passkey login function with the response data
             await handlePasskeyLogin(data.sessionId, data.loginOptions);
         } else {
             const errorText = await response.text();
             console.log('Authentication initiate failed:', response.status, errorText);
-            
+
             // If authentication initiate fails, fall back to email verification
             console.log('Falling back to email verification');
             showEmailScreen();
         }
     } catch (error) {
         console.error('Known user login failed:', error);
-        
+
         if (error.name === 'TypeError' && error.message.includes('fetch')) {
             console.log('Connection error during known user login');
         } else {
             console.log('General error during known user login:', error.message);
         }
-        
+
         // Fall back to email verification on error
         console.log('Falling back to email verification due to error');
         showEmailScreen();
@@ -283,7 +287,7 @@ otpForm.addEventListener('submit', async (e) => {
         if (response.ok) {
             const data = await response.json();
             console.log('OTP verification successful, response data:', data);
-            
+
             if (data.type === 'registration') {
                 console.log('Registration flow detected');
                 showOtpMessage(MESSAGES.OTP_SUCCESS, 'success');
@@ -499,7 +503,7 @@ async function handlePasskeyRegistration(sessionId, registrationOptions) {
 
     } catch (error) {
         console.error('Passkey creation failed:', error);
-        
+
         if (error.name === 'NotAllowedError') {
             console.log('Passkey creation not allowed by user');
             showOtpMessage(MESSAGES.PASSKEY_CANCELLED, 'error');
@@ -560,7 +564,7 @@ async function completeRegistration(sessionId, credentialJSON) {
 // Handle successful registration
 function handleRegistrationSuccess(accessToken, refreshToken) {
     // Store tokens (you might want to use sessionStorage or localStorage)
-    console.log('Registration successful. Tokens received:', { accessToken, refreshToken });
+    console.log('Registration successful. Tokens received:', {accessToken, refreshToken});
     console.log('Handling registration success');
 
     // Set knownUser cookie
@@ -618,7 +622,7 @@ async function handlePasskeyLogin(sessionId, loginOptions) {
 
     } catch (error) {
         console.error('Passkey authentication failed:', error);
-        
+
         let errorMessage;
         if (error.name === 'NotAllowedError') {
             console.log('Passkey authentication not allowed by user');
@@ -630,7 +634,7 @@ async function handlePasskeyLogin(sessionId, loginOptions) {
             console.log('General passkey authentication error:', error.message);
             errorMessage = MESSAGES.PASSKEY_FAILED;
         }
-        
+
         // Show error message on email screen after redirecting if we're on start screen, otherwise on OTP screen
         if (startScreen.classList.contains('active')) {
             console.log('Fallback to email flow after passkey error');
@@ -698,15 +702,15 @@ async function completeAuthentication(sessionId, credentialResponse) {
 // Handle successful login
 function handleLoginSuccess(accessToken, refreshToken) {
     // Store tokens (you might want to use sessionStorage or localStorage)
-    console.log('Login successful. Tokens received:', { accessToken, refreshToken });
+    console.log('Login successful. Tokens received:', {accessToken, refreshToken});
     console.log('Handling login success');
-    
+
     // Set knownUser cookie
     setCookie('knownUser', 'true');
     console.log('knownUser cookie set to true');
-    
+
     showOtpMessage(MESSAGES.AUTHENTICATION_SUCCESS, 'success');
-    
+
     // Show login welcome screen after successful login
     console.log('Showing login welcome screen after successful login');
     showLoginWelcomeScreen();
