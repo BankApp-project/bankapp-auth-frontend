@@ -86,6 +86,19 @@ if (!isMobile) {
     crossDeviceCheckbox.checked = true;
 }
 
+// Ensure only one checkbox can be checked at a time
+compatibilityCheckbox.addEventListener('change', () => {
+    if (compatibilityCheckbox.checked) {
+        crossDeviceCheckbox.checked = false;
+    }
+});
+
+crossDeviceCheckbox.addEventListener('change', () => {
+    if (crossDeviceCheckbox.checked) {
+        compatibilityCheckbox.checked = false;
+    }
+});
+
 let currentEmail = '';
 
 // Get appropriate API base URL based on device type
