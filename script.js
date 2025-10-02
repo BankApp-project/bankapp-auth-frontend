@@ -2,7 +2,8 @@
 import httpClient from './httpClient.js';
 
 // Constants
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL_MOBILE = 'https://auth.bankapp.online/api/mobile';
+const API_BASE_URL = 'https://auth.bankapp.online/api';
 const API_ENDPOINTS = {
     VERIFICATION_INITIATE: '/verification/initiate/email',
     VERIFICATION_COMPLETE: '/verification/complete/email/',
@@ -78,6 +79,16 @@ const continueBtn = document.getElementById('continueBtn');
 
 let currentEmail = '';
 
+// Mobile device detection
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+// Get appropriate API base URL based on device type
+function getApiBaseUrl() {
+    return isMobileDevice() ? API_BASE_URL_MOBILE : API_BASE_URL;
+}
+
 // Cookie utility functions
 function setCookie(name, value, days = 365) {
     const expires = new Date();
@@ -119,8 +130,8 @@ async function handleKnownUserLogin() {
         continueBtn.innerHTML = '<span class="loading"></span>Authenticating...';
         
         // Make API call to authentication/initiate
-        console.log('Sending authentication initiate request to:', `${API_BASE_URL}${API_ENDPOINTS.AUTHENTICATION_INITIATE}`);
-        const response = await httpClient.fetch(`${API_BASE_URL}${API_ENDPOINTS.AUTHENTICATION_INITIATE}`, {
+        console.log('Sending authentication initiate request to:', `${getApiBaseUrl()}${API_ENDPOINTS.AUTHENTICATION_INITIATE}`);
+        const response = await httpClient.fetch(`${getApiBaseUrl()}${API_ENDPOINTS.AUTHENTICATION_INITIATE}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -191,9 +202,9 @@ emailForm.addEventListener('submit', async (e) => {
         hideEmailMessage();
 
         // Make API call
-        console.log('Sending verification request to:', `${API_BASE_URL}${API_ENDPOINTS.VERIFICATION_INITIATE}`);
+        console.log('Sending verification request to:', `${getApiBaseUrl()}${API_ENDPOINTS.VERIFICATION_INITIATE}`);
         console.log('Request body:', {email: email});
-        const response = await httpClient.fetch(`${API_BASE_URL}${API_ENDPOINTS.VERIFICATION_INITIATE}`, {
+        const response = await httpClient.fetch(`${getApiBaseUrl()}${API_ENDPOINTS.VERIFICATION_INITIATE}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -258,9 +269,9 @@ otpForm.addEventListener('submit', async (e) => {
         hideOtpMessage();
 
         // Make API call
-        console.log('Sending OTP verification request to:', `${API_BASE_URL}${API_ENDPOINTS.VERIFICATION_COMPLETE}`);
+        console.log('Sending OTP verification request to:', `${getApiBaseUrl()}${API_ENDPOINTS.VERIFICATION_COMPLETE}`);
         console.log('Request body:', {email: currentEmail, otpValue: otpValue});
-        const response = await httpClient.fetch(`${API_BASE_URL}${API_ENDPOINTS.VERIFICATION_COMPLETE}`, {
+        const response = await httpClient.fetch(`${getApiBaseUrl()}${API_ENDPOINTS.VERIFICATION_COMPLETE}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -328,8 +339,8 @@ resendLink.addEventListener('click', async (e) => {
         resendLink.style.pointerEvents = 'none';
         resendLink.textContent = BUTTON_STATES.RESENDING;
 
-        console.log('Sending resend request to:', `${API_BASE_URL}${API_ENDPOINTS.VERIFICATION_INITIATE}`);
-        const response = await httpClient.fetch(`${API_BASE_URL}${API_ENDPOINTS.VERIFICATION_INITIATE}`, {
+        console.log('Sending resend request to:', `${getApiBaseUrl()}${API_ENDPOINTS.VERIFICATION_INITIATE}`);
+        const response = await httpClient.fetch(`${getApiBaseUrl()}${API_ENDPOINTS.VERIFICATION_INITIATE}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -513,13 +524,13 @@ async function handlePasskeyRegistration(sessionId, registrationOptions) {
 async function completeRegistration(sessionId, credentialJSON) {
     console.log('Completing registration with API for sessionId:', sessionId);
     try {
-        console.log('Sending registration completion request to:', `${API_BASE_URL}${API_ENDPOINTS.REGISTRATION_COMPLETE}`);
+        console.log('Sending registration completion request to:', `${getApiBaseUrl()}${API_ENDPOINTS.REGISTRATION_COMPLETE}`);
         const requestBody = {
             sessionId: sessionId,
             RegistrationResponseJSON: JSON.stringify(credentialJSON)
         };
         console.log('Request body:', requestBody);
-        const response = await httpClient.fetch(`${API_BASE_URL}${API_ENDPOINTS.REGISTRATION_COMPLETE}`, {
+        const response = await httpClient.fetch(`${getApiBaseUrl()}${API_ENDPOINTS.REGISTRATION_COMPLETE}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -649,7 +660,7 @@ async function handlePasskeyLogin(sessionId, loginOptions) {
 async function completeAuthentication(sessionId, credentialResponse) {
     console.log('Completing authentication with API for sessionId:', sessionId);
     try {
-        console.log('Sending authentication completion request to:', `${API_BASE_URL}${API_ENDPOINTS.AUTHENTICATION_COMPLETE}`);
+        console.log('Sending authentication completion request to:', `${getApiBaseUrl()}${API_ENDPOINTS.AUTHENTICATION_COMPLETE}`);
         const requestBody = {
             sessionId: sessionId,
             AuthenticationResponseJSON: JSON.stringify(credentialResponse),
@@ -657,7 +668,7 @@ async function completeAuthentication(sessionId, credentialResponse) {
         };
         console.log('Request body:', requestBody);
 
-        const response = await httpClient.fetch(`${API_BASE_URL}${API_ENDPOINTS.AUTHENTICATION_COMPLETE}`, {
+        const response = await httpClient.fetch(`${getApiBaseUrl()}${API_ENDPOINTS.AUTHENTICATION_COMPLETE}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
