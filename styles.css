@@ -89,6 +89,10 @@ input:disabled {
     font-weight: 600;
 }
 
+.otp-input::placeholder {
+    letter-spacing: normal;
+}
+
 .submit-btn {
     width: 100%;
     padding: 15px;
@@ -117,7 +121,8 @@ input:disabled {
     background: transparent;
     color: #667eea;
     border: 2px solid #667eea;
-    margin-bottom: 15px;
+    margin-top: 25px;
+    margin-bottom: 10px;
 }
 
 .back-btn:hover:not(:disabled) {
