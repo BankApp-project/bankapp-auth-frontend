@@ -80,10 +80,8 @@ const crossDeviceCheckbox = document.getElementById('crossDeviceCheckbox');
 // Mobile device detection - uses class added by inline script in index.html
 const isMobile = document.documentElement.classList.contains('is-mobile');
 
-// Preselect cross-device checkbox for non-mobile users
-if (!isMobile) {
-    crossDeviceCheckbox.checked = true;
-}
+// Preselect compatibility checkbox as default
+compatibilityCheckbox.checked = true;
 
 // Ensure only one checkbox can be checked at a time
 compatibilityCheckbox.addEventListener('change', () => {
