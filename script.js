@@ -319,41 +319,6 @@ backBtn.addEventListener('click', () => {
     resetToEmailScreen();
 });
 
-// Resend link functionality
-resendLink.addEventListener('click', async (e) => {
-    console.log('Resend link clicked for email:', currentEmail);
-    e.preventDefault();
-
-    try {
-        resendLink.style.pointerEvents = 'none';
-        resendLink.textContent = BUTTON_STATES.RESENDING;
-
-        console.log('Sending resend request to:', `${API_BASE_URL}${API_ENDPOINTS.VERIFICATION_INITIATE}`);
-        const response = await httpClient.fetch(`${API_BASE_URL}${API_ENDPOINTS.VERIFICATION_INITIATE}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({email: currentEmail})
-        });
-        console.log('Resend response status:', response.status);
-
-        if (response.ok) {
-            console.log('Resend successful');
-            showOtpMessage(MESSAGES.RESEND_SUCCESS, 'success');
-        } else {
-            console.log('Resend failed');
-            showOtpMessage(MESSAGES.RESEND_FAILED, 'error');
-        }
-    } catch (error) {
-        console.error('Resend error:', error);
-        showOtpMessage(MESSAGES.RESEND_ERROR, 'error');
-    } finally {
-        resendLink.style.pointerEvents = 'auto';
-        resendLink.textContent = MESSAGES.RESEND_TEXT;
-    }
-});
-
 // Auto-format OTP input
 otpValueInput.addEventListener('input', (e) => {
     // Only allow digits
