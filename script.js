@@ -83,16 +83,22 @@ const isMobile = document.documentElement.classList.contains('is-mobile');
 // Preselect compatibility checkbox as default
 compatibilityCheckbox.checked = true;
 
-// Ensure only one checkbox can be checked at a time
+// Ensure only one checkbox can be checked at a time and at least one is always checked
 compatibilityCheckbox.addEventListener('change', () => {
     if (compatibilityCheckbox.checked) {
         crossDeviceCheckbox.checked = false;
+    } else {
+        // If trying to uncheck, prevent it and keep it checked
+        compatibilityCheckbox.checked = true;
     }
 });
 
 crossDeviceCheckbox.addEventListener('change', () => {
     if (crossDeviceCheckbox.checked) {
         compatibilityCheckbox.checked = false;
+    } else {
+        // If trying to uncheck, prevent it and keep it checked
+        crossDeviceCheckbox.checked = true;
     }
 });
 
