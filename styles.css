@@ -158,6 +158,26 @@ input:disabled {
     border: 1px solid #bee5eb;
 }
 
+.info-notice {
+    background: #d1ecf1;
+    color: #0c5460;
+    padding: 12px 15px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 20px;
+    border: 1px solid #bee5eb;
+}
+
+.info-notice a {
+    color: #0c5460;
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+.info-notice a:hover {
+    color: #667eea;
+}
+
 .loading {
     display: inline-block;
     width: 20px;
