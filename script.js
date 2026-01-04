@@ -2,10 +2,10 @@
 import httpClient from './httpClient.js';
 
 // Constants
-const API_BASE_URL = 'https://auth.bankapp.online/api/mobile'; //switched to `/api/mobile` for same-device flow on desktop. cross-device flow is confusing and error-prone.
+const API_BASE_URL = 'http://localhost:8080/api'; //switched to `/api/mobile` for same-device flow on desktop. cross-device flow is confusing and error-prone.
 const API_ENDPOINTS = {
     VERIFICATION_INITIATE: '/verification/initiate/email',
-    VERIFICATION_COMPLETE: '/verification/complete/email/',
+    VERIFICATION_COMPLETE: '/verification/complete/email',
     REGISTRATION_COMPLETE: '/registration/complete',
     AUTHENTICATION_COMPLETE: '/authentication/complete',
     AUTHENTICATION_INITIATE: '/authentication/initiate'
