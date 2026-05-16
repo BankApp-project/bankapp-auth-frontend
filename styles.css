@@ -353,6 +353,10 @@ button {
     line-height: 20px;
 }
 
+.field-error[hidden] {
+    display: none;
+}
+
 .field-error::before {
     content: "!";
     width: 17px;
