@@ -251,7 +251,7 @@ emailForm.addEventListener('submit', async (event) => {
 
     if (!email || !isEmailValid(email)) {
         setEmailFieldError(MESSAGES.EMAIL_INVALID);
-        showEmailMessage(MESSAGES.EMAIL_INVALID, 'error');
+        hideEmailMessage();
         return;
     }
 
