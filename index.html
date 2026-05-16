@@ -3,121 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Passwordless Auth Demo</title>
+    <title>BankApp Authentication</title>
     <link rel="stylesheet" href="styles.css">
 
     <script>
         (function() {
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            if (isMobile) {
-                document.documentElement.classList.add('is-mobile');
-            } else {
-                document.documentElement.classList.add('is-desktop');
-            }
+            document.documentElement.classList.add(isMobile ? 'is-mobile' : 'is-desktop');
         })();
     </script>
-
 </head>
-<body>
-<div class="container">
-    <!-- Start Screen -->
-    <div id="startScreen" class="screen active">
-        <h1 class="title">Welcome</h1>
+<body data-screen="start">
+<div class="auth-shell">
+    <div class="architecture-backdrop" aria-hidden="true"></div>
 
-        <button type="button" class="submit-btn" id="continueBtn">
-            Continue
-        </button>
-    </div>
+    <main class="auth-main" aria-label="BankApp authentication">
+        <section id="startScreen" class="screen screen-start active" aria-labelledby="startTitle">
+            <div class="start-content">
+                <div class="brand-stack">
+                    <p class="brand-eyebrow" id="startTitle">Welcome to</p>
+                    <img class="brand-logo" src="assets/bankapp_watermark.png" alt="BankApp">
+                    <p class="brand-tagline">Your financial control</p>
+                </div>
 
-    <!-- Email Input Screen -->
-    <div id="emailScreen" class="screen">
-        <div class="info-notice">
-            <p>For testing purposes, we recommend using a temporary email service like
-            <a href="https://temp-mail.org" target="_blank" rel="noopener noreferrer">temp-mail.org</a></p>
-        </div>
+                <button type="button" class="submit-btn primary-btn" id="continueBtn">
+                    Log in
+                </button>
 
-        <form id="emailForm">
-            <div class="form-group">
-                <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        required
-                        placeholder="Enter your email address"
-                >
+                <img class="bank-illustration" src="assets/bankapp_logo.png" alt="" aria-hidden="true">
+            </div>
+        </section>
+
+        <section id="emailScreen" class="screen screen-flow screen-email" aria-labelledby="emailTitle">
+            <div class="progress-block" data-progress="1" aria-label="Step 1 of 3: Verification">
+                <div class="progress-track" aria-hidden="true">
+                    <span class="progress-fill"></span>
+                    <div class="progress-labels">
+                        <span>Verification</span>
+                        <span>Confirmation</span>
+                        <span>Authentification</span>
+                    </div>
+                </div>
+                <p class="mobile-step"><span>Step 1/3</span><strong>Verification</strong></p>
             </div>
 
-            <button type="submit" class="submit-btn" id="emailSubmitBtn">
-                Verify
-            </button>
-        </form>
+            <div class="flow-content">
+                <h1 class="screen-title" id="emailTitle">Email verification</h1>
+                <p class="screen-copy">We will send a one-time verification code to your email address to confirm your identity and secure your account.</p>
 
-        <div id="emailMessage" class="message"></div>
-    </div>
+                <form id="emailForm" class="auth-form" novalidate>
+                    <div class="form-group" id="emailGroup">
+                        <label class="form-label" for="email">Email address *</label>
+                        <input
+                            class="form-input"
+                            type="email"
+                            id="email"
+                            name="email"
+                            required
+                            placeholder="E-mail address"
+                            autocomplete="email"
+                        >
+                        <p id="emailFieldError" class="field-error" hidden></p>
+                    </div>
 
-    <!-- OTP Verification Screen -->
-    <div id="otpScreen" class="screen">
-        <p class="subtitle">We've sent a verification code to your email address</p>
+                    <button type="submit" class="submit-btn primary-btn" id="emailSubmitBtn">
+                        Send code
+                    </button>
+                </form>
 
-        <form id="otpForm">
-            <div class="form-group">
-                <label for="emailConfirm">Email Address</label>
-                <input
-                        type="email"
-                        id="emailConfirm"
-                        name="emailConfirm"
-                        required
-                        disabled
-                >
+                <div id="emailMessage" class="message" role="status" aria-live="polite"></div>
             </div>
-            <div class="form-group">
-                <input
-                        type="text"
-                        id="otpValue"
-                        name="otpValue"
-                        required
-                        placeholder="Verification Code"
-                        maxlength="6"
-                        class="otp-input"
-                        autocomplete="one-time-code"
-                >
+        </section>
+
+        <section id="otpScreen" class="screen screen-flow screen-otp" aria-labelledby="otpTitle">
+            <div class="progress-block" data-progress="2" aria-label="Step 2 of 3: Confirmation">
+                <div class="progress-track" aria-hidden="true">
+                    <span class="progress-fill"></span>
+                    <div class="progress-labels">
+                        <span>Verification</span>
+                        <span>Confirmation</span>
+                        <span>Authentification</span>
+                    </div>
+                </div>
+                <p class="mobile-step"><span>Step 2/3</span><strong>Confirmation</strong></p>
             </div>
 
-            <button type="submit" class="submit-btn" id="otpSubmitBtn">
-                Continue
-            </button>
+            <div class="flow-content">
+                <h1 class="screen-title" id="otpTitle">Code confirmation</h1>
+                <p class="screen-copy">enter the 6-digit code you received at the email address you provided</p>
 
-            <button type="button" class="submit-btn back-btn" id="backBtn">
-                Correct Email
-            </button>
-        </form>
+                <form id="otpForm" class="auth-form otp-form" novalidate>
+                    <input type="hidden" id="emailConfirm" name="emailConfirm">
+                    <input type="hidden" id="otpValue" name="otpValue" required>
+                    <p id="emailDisplay" class="sr-only" aria-live="polite"></p>
 
-        <div id="otpMessage" class="message"></div>
-    </div>
+                    <div class="otp-digit-grid" role="group" aria-label="6-digit verification code">
+                        <input class="otp-digit" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="1" placeholder="0" aria-label="Digit 1">
+                        <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" placeholder="0" aria-label="Digit 2">
+                        <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" placeholder="0" aria-label="Digit 3">
+                        <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" placeholder="0" aria-label="Digit 4">
+                        <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" placeholder="0" aria-label="Digit 5">
+                        <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" placeholder="0" aria-label="Digit 6">
+                    </div>
 
-    <!-- Registration Welcome Screen -->
-    <div id="registrationWelcomeScreen" class="screen">
-        <div class="welcome-content">
-            <h1 class="title welcome-title">Welcome! ❤️</h1>
-            <p class="subtitle">Your account has been created successfully!</p>
-            
-            <div class="welcome-message">
-                <p>Thank you for joining us. Your account is now ready to use.</p>
+                    <button type="submit" class="submit-btn primary-btn" id="otpSubmitBtn" disabled>
+                        Continue
+                    </button>
+
+                    <div id="otpMessage" class="message otp-message" role="status" aria-live="polite"></div>
+
+                    <div class="resend-group">
+                        <p>Didn’t recieve the code?</p>
+                        <button type="button" class="resend-link" id="resendLink">Resend</button>
+                    </div>
+
+                    <button type="button" id="backBtn" hidden>Correct Email</button>
+                </form>
             </div>
-        </div>
-    </div>
+        </section>
 
-    <!-- Login Welcome Screen -->
-    <div id="loginWelcomeScreen" class="screen">
-        <div class="welcome-content">
-            <h1 class="title welcome-title">Welcome Back! ❤️</h1>
-            <p class="subtitle">You're successfully authenticated and ready to go!</p>
-            
-            <div class="welcome-message">
-                <p>Thank you for using our secure authentication system.</p>
+        <section id="registrationWelcomeScreen" class="screen screen-flow screen-success" aria-labelledby="registrationSuccessTitle">
+            <div class="progress-block" data-progress="3" aria-label="Step 3 of 3: Authentification">
+                <div class="progress-track" aria-hidden="true">
+                    <span class="progress-fill"></span>
+                    <div class="progress-labels">
+                        <span>Verification</span>
+                        <span>Confirmation</span>
+                        <span>Authentification</span>
+                    </div>
+                </div>
+                <p class="mobile-step"><span>Step 3/3</span><strong>Authentification</strong></p>
             </div>
-        </div>
-    </div>
+
+            <div class="success-content">
+                <h1 class="screen-title success-title" id="registrationSuccessTitle">Authentication<br>successfull!</h1>
+                <div class="success-mark" aria-hidden="true">
+                    <img class="success-ring" src="assets/success1.png" alt="">
+                    <img class="success-check" src="assets/success2.png" alt="">
+                </div>
+            </div>
+        </section>
+
+        <section id="loginWelcomeScreen" class="screen screen-flow screen-success" aria-labelledby="loginSuccessTitle">
+            <div class="progress-block" data-progress="3" aria-label="Step 3 of 3: Authentification">
+                <div class="progress-track" aria-hidden="true">
+                    <span class="progress-fill"></span>
+                    <div class="progress-labels">
+                        <span>Verification</span>
+                        <span>Confirmation</span>
+                        <span>Authentification</span>
+                    </div>
+                </div>
+                <p class="mobile-step"><span>Step 3/3</span><strong>Authentification</strong></p>
+            </div>
+
+            <div class="success-content">
+                <h1 class="screen-title success-title" id="loginSuccessTitle">Authentication<br>successfull!</h1>
+                <div class="success-mark" aria-hidden="true">
+                    <img class="success-ring" src="assets/success1.png" alt="">
+                    <img class="success-check" src="assets/success2.png" alt="">
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="legal-footer">
+        <p class="legal-copy">By continuing, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.</p>
+    </footer>
 </div>
 
 <script type="module" src="script.js"></script>

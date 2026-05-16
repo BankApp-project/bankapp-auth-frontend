@@ -1,8 +1,6 @@
-// Import HTTP client for X-Correlation-ID support
 import httpClient from './httpClient.js';
 
-// Constants
-const API_BASE_URL = 'https://auth.bankapp.online/api/mobile'; //switched to `/api/mobile` for same-device flow on desktop. cross-device flow is confusing and error-prone.
+const API_BASE_URL = 'https://auth.bankapp.online/api/mobile';
 const API_ENDPOINTS = {
     VERIFICATION_INITIATE: '/verification/initiate/email',
     VERIFICATION_COMPLETE: '/verification/complete/email/',
@@ -12,30 +10,28 @@ const API_ENDPOINTS = {
 };
 
 const VALIDATION = {
-    OTP_LENGTH: 6,
-    REDIRECT_DELAY: 2000
+    OTP_LENGTH: 6
 };
 
 const MESSAGES = {
-    EMAIL_REQUIRED: 'Please enter an email address',
-    EMAIL_INVALID: 'Please enter a valid email address',
-    EMAIL_SENT: 'Verification email sent successfully!',
-    OTP_REQUIRED: 'Please enter the verification code',
-    OTP_INVALID_LENGTH: 'Verification code must be ' + VALIDATION.OTP_LENGTH + 'digits',
-    OTP_SUCCESS: 'Email verification completed successfully!',
-    RESEND_SUCCESS: 'Verification code resent successfully!',
-    RESEND_FAILED: 'Failed to resend verification code',
-    RESEND_ERROR: 'Error resending verification code',
-    CONNECTION_ERROR: 'Error: Unable to connect to the server. Make sure the API is running on localhost:8080',
-    RESEND_TEXT: "Didn't receive the code? Resend",
+    EMAIL_REQUIRED: 'Your email is invalid',
+    EMAIL_INVALID: 'Your email is invalid',
+    EMAIL_SENT: 'Verification code sent.',
+    OTP_REQUIRED: 'Code must be 6 digits.',
+    OTP_INVALID_LENGTH: 'Code must be 6 digits.',
+    OTP_SUCCESS: 'Email verification completed successfully.',
+    RESEND_SUCCESS: 'Verification code resent successfully.',
+    RESEND_FAILED: 'Failed to resend verification code.',
+    RESEND_ERROR: 'Error resending verification code.',
+    CONNECTION_ERROR: 'Unable to connect to the server. Please try again.',
     PASSKEY_CREATING: 'Creating your passkey...',
     PASSKEY_FAILED: 'Failed to create passkey. Please try again.',
     PASSKEY_CANCELLED: 'Passkey creation was cancelled.',
     PASSKEY_NOT_SUPPORTED: 'Passkeys are not supported on this device/browser.',
     PASSKEY_AUTHENTICATING: 'Authenticating with your passkey...',
-    AUTHENTICATION_SUCCESS: 'Welcome back! You are now logged in.',
+    AUTHENTICATION_SUCCESS: 'Welcome back. You are now logged in.',
     AUTHENTICATION_FAILED: 'Failed to authenticate. Please try again.',
-    REGISTRATION_SUCCESS: 'Account created successfully! You are now logged in.',
+    REGISTRATION_SUCCESS: 'Account created successfully. You are now logged in.',
     REGISTRATION_FAILED: 'Failed to complete registration. Please try again.'
 };
 
@@ -43,26 +39,28 @@ const BUTTON_STATES = {
     SENDING: '<span class="loading"></span>Sending...',
     VERIFYING: '<span class="loading"></span>Verifying...',
     RESENDING: 'Resending...',
-    SEND_VERIFICATION: 'Send Verification',
-    VERIFY_CODE: 'Verify Code',
+    SEND_CODE: 'Send code',
+    CONTINUE: 'Continue',
+    LOGIN: 'Log in',
     CREATING_PASSKEY: '<span class="loading"></span>Creating Passkey...',
     AUTHENTICATING_PASSKEY: '<span class="loading"></span>Authenticating...'
 };
 
-// Screen elements
-const startScreen = document.getElementById('startScreen');
-const emailScreen = document.getElementById('emailScreen');
-const otpScreen = document.getElementById('otpScreen');
-const registrationWelcomeScreen = document.getElementById('registrationWelcomeScreen');
-const loginWelcomeScreen = document.getElementById('loginWelcomeScreen');
+const screens = {
+    start: document.getElementById('startScreen'),
+    email: document.getElementById('emailScreen'),
+    otp: document.getElementById('otpScreen'),
+    registrationSuccess: document.getElementById('registrationWelcomeScreen'),
+    loginSuccess: document.getElementById('loginWelcomeScreen')
+};
 
-// Email form elements
+const continueBtn = document.getElementById('continueBtn');
 const emailForm = document.getElementById('emailForm');
 const emailInput = document.getElementById('email');
 const emailSubmitBtn = document.getElementById('emailSubmitBtn');
 const emailMessageDiv = document.getElementById('emailMessage');
-
-// OTP form elements
+const emailGroup = document.getElementById('emailGroup');
+const emailFieldError = document.getElementById('emailFieldError');
 const otpForm = document.getElementById('otpForm');
 const emailConfirmInput = document.getElementById('emailConfirm');
 const otpValueInput = document.getElementById('otpValue');
@@ -71,14 +69,10 @@ const otpMessageDiv = document.getElementById('otpMessage');
 const emailDisplay = document.getElementById('emailDisplay');
 const backBtn = document.getElementById('backBtn');
 const resendLink = document.getElementById('resendLink');
-
-// Start screen elements
-const continueBtn = document.getElementById('continueBtn');
-
+const otpDigits = Array.from(document.querySelectorAll('.otp-digit'));
 
 let currentEmail = '';
 
-// Cookie utility functions
 function setCookie(name, value, days = 365) {
     const expires = new Date();
     expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
@@ -92,279 +86,31 @@ function getCookie(name) {
     return null;
 }
 
-// Continue button functionality
-continueBtn.addEventListener('click', async () => {
-    console.log('Continue button clicked');
-    
-    // Check if user is known (has knownUser cookie set to true)
-    const knownUser = getCookie('knownUser');
-    console.log('knownUser cookie value:', knownUser);
-    
-    if (knownUser === 'true') {
-        console.log('Known user detected, initiating passkey login flow');
-        await handleKnownUserLogin();
-    } else {
-        console.log('Unknown user, proceeding with email verification');
-        showEmailScreen();
-    }
-});
-
-// Handle known user login flow
-async function handleKnownUserLogin() {
-    console.log('Starting known user login flow');
-    
-    try {
-        // Show loading state on continue button
-        continueBtn.disabled = true;
-        continueBtn.innerHTML = '<span class="loading"></span>Authenticating...';
-        
-        // Make API call to authentication/initiate
-        console.log('Sending authentication initiate request to:', `${API_BASE_URL}${API_ENDPOINTS.AUTHENTICATION_INITIATE}`);
-        const response = await httpClient.fetch(`${API_BASE_URL}${API_ENDPOINTS.AUTHENTICATION_INITIATE}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        });
-        console.log('Authentication initiate response status:', response.status);
-
-        if (response.ok) {
-            const data = await response.json();
-            console.log('Authentication initiate successful, response data:', data);
-            
-            // Use the existing passkey login function with the response data
-            await handlePasskeyLogin(data.sessionId, data.loginOptions);
-        } else {
-            const errorText = await response.text();
-            console.log('Authentication initiate failed:', response.status, errorText);
-            
-            // If authentication initiate fails, fall back to email verification
-            console.log('Falling back to email verification');
-            showEmailScreen();
-        }
-    } catch (error) {
-        console.error('Known user login failed:', error);
-        
-        if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            console.log('Connection error during known user login');
-        } else {
-            console.log('General error during known user login:', error.message);
-        }
-        
-        // Fall back to email verification on error
-        console.log('Falling back to email verification due to error');
-        showEmailScreen();
-    } finally {
-        // Reset button state
-        continueBtn.disabled = false;
-        continueBtn.innerHTML = 'Continue';
-    }
+function setActiveScreen(screenName, activeScreen) {
+    Object.values(screens).forEach((screen) => {
+        screen.classList.toggle('active', screen === activeScreen);
+    });
+    document.body.dataset.screen = screenName;
 }
 
-// Email form submission
-emailForm.addEventListener('submit', async (e) => {
-    console.log('Email form submitted');
-    e.preventDefault();
-
-    const email = emailInput.value.trim();
-    console.log('Email input value:', email);
-
-    if (!email) {
-        console.log('Email validation failed: empty email');
-        showEmailMessage(MESSAGES.EMAIL_REQUIRED, 'error');
-        return;
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-        console.log('Email validation failed: invalid format');
-        showEmailMessage(MESSAGES.EMAIL_INVALID, 'error');
-        return;
-    }
-    console.log('Email validation passed');
-
-    try {
-        // Show loading state
-        emailSubmitBtn.disabled = true;
-        emailSubmitBtn.innerHTML = BUTTON_STATES.SENDING;
-        hideEmailMessage();
-
-        // Make API call
-        console.log('Sending verification request to:', `${API_BASE_URL}${API_ENDPOINTS.VERIFICATION_INITIATE}`);
-        console.log('Request body:', {email: email});
-        const response = await httpClient.fetch(`${API_BASE_URL}${API_ENDPOINTS.VERIFICATION_INITIATE}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({email: email})
-        });
-        console.log('Verification response status:', response.status);
-
-        if (response.ok) {
-            console.log('Verification email sent successfully');
-            currentEmail = email;
-            console.log('Current email set to:', currentEmail);
-            showOtpScreen();
-            showEmailMessage(MESSAGES.EMAIL_SENT, 'success');
-        } else {
-            const errorText = await response.text();
-            console.log('Verification request failed:', response.status, errorText);
-            showEmailMessage(`Error: ${response.status} - ${errorText || 'Failed to send verification email'}`, 'error');
-        }
-    } catch (error) {
-        console.error('Email form submission error:', error);
-        if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            console.log('Connection error detected');
-            showEmailMessage(MESSAGES.CONNECTION_ERROR, 'error');
-        } else {
-            console.log('General error:', error.message);
-            showEmailMessage(`Error: ${error.message}`, 'error');
-        }
-    } finally {
-        // Reset button state
-        emailSubmitBtn.disabled = false;
-        emailSubmitBtn.innerHTML = BUTTON_STATES.SEND_VERIFICATION;
-    }
-});
-
-// OTP form submission
-otpForm.addEventListener('submit', async (e) => {
-    console.log('OTP form submitted');
-    e.preventDefault();
-
-    const otpValue = otpValueInput.value.trim();
-    console.log('OTP input value:', otpValue);
-    console.log('Current email for verification:', currentEmail);
-
-    if (!otpValue) {
-        console.log('OTP validation failed: empty value');
-        showOtpMessage(MESSAGES.OTP_REQUIRED, 'error');
-        return;
-    }
-
-    if (otpValue.length !== VALIDATION.OTP_LENGTH) {
-        console.log('OTP validation failed: invalid length', otpValue.length, 'expected:', VALIDATION.OTP_LENGTH);
-        showOtpMessage(MESSAGES.OTP_INVALID_LENGTH, 'error');
-        return;
-    }
-    console.log('OTP validation passed');
-
-    try {
-        // Show loading state
-        otpSubmitBtn.disabled = true;
-        otpSubmitBtn.innerHTML = BUTTON_STATES.VERIFYING;
-        hideOtpMessage();
-
-        // Make API call
-        console.log('Sending OTP verification request to:', `${API_BASE_URL}${API_ENDPOINTS.VERIFICATION_COMPLETE}`);
-        console.log('Request body:', {email: currentEmail, otpValue: otpValue});
-        const response = await httpClient.fetch(`${API_BASE_URL}${API_ENDPOINTS.VERIFICATION_COMPLETE}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                email: currentEmail,
-                otpValue: otpValue
-            })
-        });
-        console.log('OTP verification response status:', response.status);
-
-        if (response.ok) {
-            const data = await response.json();
-            console.log('OTP verification successful, response data:', data);
-            
-            if (data.type === 'registration') {
-                console.log('Registration flow detected');
-                showOtpMessage(MESSAGES.OTP_SUCCESS, 'success');
-                setTimeout(async () => {
-                    await handlePasskeyRegistration(data.sessionId, data.registrationOptions);
-                }, 1000);
-            } else if (data.type === 'login') {
-                console.log('Login flow detected');
-                showOtpMessage(MESSAGES.OTP_SUCCESS, 'success');
-                setTimeout(async () => {
-                    await handlePasskeyLogin(data.sessionId, data.loginOptions);
-                }, 1000);
-            } else {
-                console.log('Unexpected response type:', data.type);
-                showOtpMessage('Unexpected response from server.', 'error');
-            }
-        } else {
-            const errorText = await response.text();
-            console.log('OTP verification failed:', response.status, errorText);
-            showOtpMessage(`Error: ${response.status} - ${errorText || 'Invalid verification code'}`, 'error');
-        }
-    } catch (error) {
-        console.error('OTP form submission error:', error);
-        if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            console.log('Connection error detected');
-            showOtpMessage(MESSAGES.CONNECTION_ERROR, 'error');
-        } else {
-            console.log('General error:', error.message);
-            showOtpMessage(`Error: ${error.message}`, 'error');
-        }
-    } finally {
-        // Reset button state
-        otpSubmitBtn.disabled = false;
-        otpSubmitBtn.innerHTML = BUTTON_STATES.VERIFY_CODE;
-    }
-});
-
-// Back button functionality
-backBtn.addEventListener('click', () => {
-    console.log('Back button clicked');
-    resetToEmailScreen();
-});
-
-// Auto-format OTP input
-otpValueInput.addEventListener('input', (e) => {
-    // Only allow digits
-    const oldValue = e.target.value;
-    e.target.value = e.target.value.replace(/\D/g, '');
-    console.log('OTP input changed from', oldValue, 'to', e.target.value);
-    hideOtpMessage();
-});
-
-// Screen management functions
-function showEmailScreen() {
-    console.log('Switching to email screen');
-    startScreen.classList.remove('active');
-    emailScreen.classList.add('active');
-    emailInput.focus();
+function isEmailValid(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-function showOtpScreen() {
-    console.log('Switching to OTP screen for email:', currentEmail);
-    emailScreen.classList.remove('active');
-    otpScreen.classList.add('active');
-
-    emailConfirmInput.value = currentEmail;
-    emailDisplay.textContent = `Code sent to: ${currentEmail}`;
-    otpValueInput.focus();
-
-    hideEmailMessage();
-    hideOtpMessage();
+function setEmailFieldError(message) {
+    emailGroup.classList.add('invalid');
+    emailFieldError.textContent = message;
+    emailFieldError.hidden = false;
+    emailSubmitBtn.disabled = true;
 }
 
-function resetToEmailScreen() {
-    console.log('Resetting to email screen');
-    otpScreen.classList.remove('active');
-    registrationWelcomeScreen.classList.remove('active');
-    loginWelcomeScreen.classList.remove('active');
-    emailScreen.classList.add('active');
-
-    // Reset OTP form
-    otpForm.reset();
-    currentEmail = '';
-
-    hideOtpMessage();
-    hideEmailMessage();
+function clearEmailFieldError() {
+    emailGroup.classList.remove('invalid');
+    emailFieldError.textContent = '';
+    emailFieldError.hidden = true;
+    emailSubmitBtn.disabled = false;
 }
 
-// Message functions
 function showEmailMessage(text, type) {
     emailMessageDiv.textContent = text;
     emailMessageDiv.className = `message ${type}`;
@@ -373,300 +119,482 @@ function showEmailMessage(text, type) {
 
 function hideEmailMessage() {
     emailMessageDiv.style.display = 'none';
+    emailMessageDiv.textContent = '';
+}
+
+function setOtpErrorState(hasError) {
+    otpDigits.forEach((input) => input.classList.toggle('error', hasError));
 }
 
 function showOtpMessage(text, type) {
     otpMessageDiv.textContent = text;
-    otpMessageDiv.className = `message ${type}`;
+    otpMessageDiv.className = `message otp-message ${type}`;
     otpMessageDiv.style.display = 'block';
+    setOtpErrorState(type === 'error');
+}
+
+function showAuthenticationError(message) {
+    if (screens.start.classList.contains('active')) {
+        showEmailScreen();
+        showEmailMessage(message, 'error');
+        return;
+    }
+
+    showOtpMessage(message, 'error');
 }
 
 function hideOtpMessage() {
     otpMessageDiv.style.display = 'none';
+    otpMessageDiv.textContent = '';
+    setOtpErrorState(false);
 }
 
-// Show registration welcome screen
-function showRegistrationWelcomeScreen() {
-    console.log('Switching to registration welcome screen');
-    startScreen.classList.remove('active');
-    emailScreen.classList.remove('active');
-    otpScreen.classList.remove('active');
-    loginWelcomeScreen.classList.remove('active');
-    registrationWelcomeScreen.classList.add('active');
+function getOtpValue() {
+    return otpDigits.map((input) => input.value).join('');
 }
 
-// Show login welcome screen
-function showLoginWelcomeScreen() {
-    console.log('Switching to login welcome screen');
-    startScreen.classList.remove('active');
-    emailScreen.classList.remove('active');
-    otpScreen.classList.remove('active');
-    registrationWelcomeScreen.classList.remove('active');
-    loginWelcomeScreen.classList.add('active');
+function syncOtpValue() {
+    const otpValue = getOtpValue();
+    otpValueInput.value = otpValue;
+    otpSubmitBtn.disabled = otpValue.length !== VALIDATION.OTP_LENGTH;
 }
 
+function clearOtpInputs() {
+    otpDigits.forEach((input) => {
+        input.value = '';
+        input.classList.remove('error');
+    });
+    syncOtpValue();
+}
 
-// Clear email message when user starts typing
-emailInput.addEventListener('input', hideEmailMessage);
+function fillOtpDigits(value, startIndex = 0) {
+    const digits = value.replace(/\D/g, '').slice(0, VALIDATION.OTP_LENGTH - startIndex);
+    digits.split('').forEach((digit, offset) => {
+        const input = otpDigits[startIndex + offset];
+        if (input) input.value = digit;
+    });
+    syncOtpValue();
 
-// Passkey registration function
-async function handlePasskeyRegistration(sessionId, registrationOptions) {
-    console.log('Starting passkey registration with sessionId:', sessionId);
-    console.log('Registration options:', registrationOptions);
+    const nextIndex = Math.min(startIndex + digits.length, VALIDATION.OTP_LENGTH - 1);
+    otpDigits[nextIndex]?.focus();
+}
+
+function extractResponseMessage(text, fallback) {
+    return text && text.trim() ? text.trim() : fallback;
+}
+
+async function sendVerificationCode(email) {
+    return httpClient.fetch(`${API_BASE_URL}${API_ENDPOINTS.VERIFICATION_INITIATE}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email })
+    });
+}
+
+continueBtn.addEventListener('click', async () => {
+    const knownUser = getCookie('knownUser');
+
+    if (knownUser === 'true') {
+        await handleKnownUserLogin();
+        return;
+    }
+
+    showEmailScreen();
+});
+
+async function handleKnownUserLogin() {
     try {
-        // Check if WebAuthn is supported
+        continueBtn.disabled = true;
+        continueBtn.innerHTML = BUTTON_STATES.AUTHENTICATING_PASSKEY;
+
+        const response = await httpClient.fetch(`${API_BASE_URL}${API_ENDPOINTS.AUTHENTICATION_INITIATE}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            showEmailScreen();
+            return;
+        }
+
+        const data = await response.json();
+        await handlePasskeyLogin(data.sessionId, data.loginOptions);
+    } catch (error) {
+        console.error('Known user login failed:', error);
+        showEmailScreen();
+    } finally {
+        if (screens.start.classList.contains('active')) {
+            continueBtn.disabled = false;
+            continueBtn.innerHTML = BUTTON_STATES.LOGIN;
+        }
+    }
+}
+
+emailForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const email = emailInput.value.trim();
+
+    if (!email || !isEmailValid(email)) {
+        setEmailFieldError(MESSAGES.EMAIL_INVALID);
+        showEmailMessage(MESSAGES.EMAIL_INVALID, 'error');
+        return;
+    }
+
+    try {
+        hideEmailMessage();
+        clearEmailFieldError();
+        emailSubmitBtn.disabled = true;
+        emailSubmitBtn.innerHTML = BUTTON_STATES.SENDING;
+
+        const response = await sendVerificationCode(email);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            showEmailMessage(`Error: ${response.status} - ${extractResponseMessage(errorText, 'Failed to send verification email')}`, 'error');
+            return;
+        }
+
+        currentEmail = email;
+        showOtpScreen();
+    } catch (error) {
+        console.error('Email form submission error:', error);
+        showEmailMessage(error instanceof TypeError ? MESSAGES.CONNECTION_ERROR : `Error: ${error.message}`, 'error');
+    } finally {
+        emailSubmitBtn.disabled = false;
+        emailSubmitBtn.innerHTML = BUTTON_STATES.SEND_CODE;
+    }
+});
+
+otpForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const otpValue = getOtpValue();
+
+    if (otpValue.length !== VALIDATION.OTP_LENGTH) {
+        showOtpMessage(MESSAGES.OTP_INVALID_LENGTH, 'error');
+        return;
+    }
+
+    try {
+        otpSubmitBtn.disabled = true;
+        otpSubmitBtn.innerHTML = BUTTON_STATES.VERIFYING;
+        hideOtpMessage();
+
+        const response = await httpClient.fetch(`${API_BASE_URL}${API_ENDPOINTS.VERIFICATION_COMPLETE}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                email: currentEmail,
+                otpValue
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            showOtpMessage(extractResponseMessage(errorText, 'invalid code'), 'error');
+            return;
+        }
+
+        const data = await response.json();
+        showOtpMessage(MESSAGES.OTP_SUCCESS, 'success');
+
+        setTimeout(async () => {
+            if (data.type === 'registration') {
+                await handlePasskeyRegistration(data.sessionId, data.registrationOptions);
+                return;
+            }
+
+            if (data.type === 'login') {
+                await handlePasskeyLogin(data.sessionId, data.loginOptions);
+                return;
+            }
+
+            showOtpMessage('Unexpected response from server.', 'error');
+        }, 1000);
+    } catch (error) {
+        console.error('OTP form submission error:', error);
+        showOtpMessage(error instanceof TypeError ? MESSAGES.CONNECTION_ERROR : `Error: ${error.message}`, 'error');
+    } finally {
+        if (screens.otp.classList.contains('active')) {
+            otpSubmitBtn.innerHTML = BUTTON_STATES.CONTINUE;
+            syncOtpValue();
+        }
+    }
+});
+
+backBtn.addEventListener('click', resetToEmailScreen);
+
+resendLink.addEventListener('click', async () => {
+    if (!currentEmail) {
+        showOtpMessage('Enter your email again to resend the code.', 'error');
+        return;
+    }
+
+    try {
+        resendLink.disabled = true;
+        resendLink.textContent = BUTTON_STATES.RESENDING;
+        const response = await sendVerificationCode(currentEmail);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            showOtpMessage(extractResponseMessage(errorText, MESSAGES.RESEND_FAILED), 'error');
+            return;
+        }
+
+        showOtpMessage(MESSAGES.RESEND_SUCCESS, 'info');
+    } catch (error) {
+        console.error('Resend failed:', error);
+        showOtpMessage(MESSAGES.RESEND_ERROR, 'error');
+    } finally {
+        resendLink.disabled = false;
+        resendLink.textContent = 'Resend';
+    }
+});
+
+otpDigits.forEach((input, index) => {
+    input.addEventListener('input', (event) => {
+        const value = event.target.value.replace(/\D/g, '');
+        event.target.value = '';
+
+        if (value.length > 0) {
+            fillOtpDigits(value, index);
+        } else {
+            syncOtpValue();
+        }
+
+        hideOtpMessage();
+    });
+
+    input.addEventListener('keydown', (event) => {
+        if (event.key === 'Backspace' && input.value === '' && index > 0) {
+            otpDigits[index - 1].focus();
+            otpDigits[index - 1].value = '';
+            syncOtpValue();
+        }
+
+        if (event.key === 'ArrowLeft' && index > 0) {
+            event.preventDefault();
+            otpDigits[index - 1].focus();
+        }
+
+        if (event.key === 'ArrowRight' && index < otpDigits.length - 1) {
+            event.preventDefault();
+            otpDigits[index + 1].focus();
+        }
+    });
+
+    input.addEventListener('paste', (event) => {
+        event.preventDefault();
+        const pastedValue = event.clipboardData.getData('text');
+        fillOtpDigits(pastedValue, index);
+        hideOtpMessage();
+    });
+});
+
+emailInput.addEventListener('input', () => {
+    clearEmailFieldError();
+    hideEmailMessage();
+});
+
+function showEmailScreen() {
+    setActiveScreen('email', screens.email);
+    emailInput.focus();
+}
+
+function showOtpScreen() {
+    setActiveScreen('otp', screens.otp);
+    emailConfirmInput.value = currentEmail;
+    emailDisplay.textContent = `Code sent to: ${currentEmail}`;
+    clearOtpInputs();
+    hideEmailMessage();
+    hideOtpMessage();
+    otpDigits[0]?.focus();
+}
+
+function resetToEmailScreen() {
+    setActiveScreen('email', screens.email);
+    otpForm.reset();
+    clearOtpInputs();
+    currentEmail = '';
+    hideOtpMessage();
+    hideEmailMessage();
+    emailInput.focus();
+}
+
+function showRegistrationWelcomeScreen() {
+    setActiveScreen('success', screens.registrationSuccess);
+}
+
+function showLoginWelcomeScreen() {
+    setActiveScreen('success', screens.loginSuccess);
+}
+
+async function handlePasskeyRegistration(sessionId, registrationOptions) {
+    try {
         if (!window.PublicKeyCredential) {
-            console.log('WebAuthn not supported');
             showOtpMessage(MESSAGES.PASSKEY_NOT_SUPPORTED, 'error');
             return;
         }
-        console.log('WebAuthn is supported');
 
-        // Show loading state
         otpSubmitBtn.disabled = true;
         otpSubmitBtn.innerHTML = BUTTON_STATES.CREATING_PASSKEY;
         showOtpMessage(MESSAGES.PASSKEY_CREATING, 'info');
 
-        // Parse creation options from JSON (handles base64 to ArrayBuffer conversion)
-        console.log('Parsing creation options');
         const credentialCreationOptions = PublicKeyCredential.parseCreationOptionsFromJSON(registrationOptions);
-        console.log('Parsed creation options:', credentialCreationOptions);
-
-        // Create the credential
-        console.log('Creating credential...');
         const credential = await navigator.credentials.create({
             publicKey: credentialCreationOptions
         });
-        console.log('Credential created:', credential);
 
         if (!credential) {
-            console.log('Credential creation returned null');
             showOtpMessage(MESSAGES.PASSKEY_CANCELLED, 'error');
             return;
         }
 
-        // Convert credential to JSON format using official method
-        console.log('Converting credential to JSON format');
-        const registrationResponseJSON = credential.toJSON();
-        console.log('Credential JSON:', registrationResponseJSON);
-
-        // Complete registration
-        console.log('Completing registration...');
-        await completeRegistration(sessionId, registrationResponseJSON);
-
+        await completeRegistration(sessionId, credential.toJSON());
     } catch (error) {
         console.error('Passkey creation failed:', error);
-        
+
         if (error.name === 'NotAllowedError') {
-            console.log('Passkey creation not allowed by user');
             showOtpMessage(MESSAGES.PASSKEY_CANCELLED, 'error');
         } else if (error.name === 'NotSupportedError') {
-            console.log('Passkey not supported');
             showOtpMessage(MESSAGES.PASSKEY_NOT_SUPPORTED, 'error');
         } else {
-            console.log('General passkey creation error:', error.message);
             showOtpMessage(MESSAGES.PASSKEY_FAILED, 'error');
         }
     } finally {
-        // Reset button state
-        otpSubmitBtn.disabled = false;
-        otpSubmitBtn.innerHTML = BUTTON_STATES.VERIFY_CODE;
+        if (screens.otp.classList.contains('active')) {
+            otpSubmitBtn.innerHTML = BUTTON_STATES.CONTINUE;
+            syncOtpValue();
+        }
     }
 }
 
-// Complete registration with the API
 async function completeRegistration(sessionId, credentialJSON) {
-    console.log('Completing registration with API for sessionId:', sessionId);
     try {
-        console.log('Sending registration completion request to:', `${API_BASE_URL}${API_ENDPOINTS.REGISTRATION_COMPLETE}`);
-        const requestBody = {
-            sessionId: sessionId,
-            RegistrationResponseJSON: JSON.stringify(credentialJSON)
-        };
-        console.log('Request body:', requestBody);
         const response = await httpClient.fetch(`${API_BASE_URL}${API_ENDPOINTS.REGISTRATION_COMPLETE}`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/json'
             },
-            body: JSON.stringify(requestBody)
+            body: JSON.stringify({
+                sessionId,
+                RegistrationResponseJSON: JSON.stringify(credentialJSON)
+            })
         });
-        console.log('Registration completion response status:', response.status);
 
-        if (response.ok) {
-            const data = await response.json();
-            console.log('Registration completed successfully, response data:', data);
-            handleRegistrationSuccess(data.accessToken, data.refreshToken);
-        } else {
+        if (!response.ok) {
             const errorText = await response.text();
-            console.log('Registration completion failed:', response.status, errorText);
-            showOtpMessage(`Registration failed: ${errorText || 'Unknown error'}`, 'error');
+            showOtpMessage(`Registration failed: ${extractResponseMessage(errorText, 'Unknown error')}`, 'error');
+            return;
         }
+
+        const data = await response.json();
+        handleRegistrationSuccess(data.accessToken, data.refreshToken);
     } catch (error) {
         console.error('Registration completion failed:', error);
-        if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            console.log('Connection error during registration completion');
-            showOtpMessage(MESSAGES.CONNECTION_ERROR, 'error');
-        } else {
-            console.log('General registration completion error:', error.message);
-            showOtpMessage(MESSAGES.REGISTRATION_FAILED, 'error');
-        }
+        showOtpMessage(error instanceof TypeError ? MESSAGES.CONNECTION_ERROR : MESSAGES.REGISTRATION_FAILED, 'error');
     }
 }
 
-// Handle successful registration
 function handleRegistrationSuccess(accessToken, refreshToken) {
-    // Store tokens (you might want to use sessionStorage or localStorage)
     console.log('Registration successful. Tokens received:', { accessToken, refreshToken });
-    console.log('Handling registration success');
-
-    // Set knownUser cookie
     setCookie('knownUser', 'true');
-    console.log('knownUser cookie set to true');
-
-    showOtpMessage(MESSAGES.REGISTRATION_SUCCESS, 'success');
     showRegistrationWelcomeScreen();
 }
 
-// Passkey login function
 async function handlePasskeyLogin(sessionId, loginOptions) {
-    console.log('Starting passkey login with sessionId:', sessionId);
-    console.log('Login options:', loginOptions);
+    const startedFromStartScreen = screens.start.classList.contains('active');
+
     try {
-        // Check if WebAuthn is supported
         if (!window.PublicKeyCredential) {
-            console.log('WebAuthn not supported');
-            showOtpMessage(MESSAGES.PASSKEY_NOT_SUPPORTED, 'error');
-            return;
+            throw new Error(MESSAGES.PASSKEY_NOT_SUPPORTED);
         }
-        console.log('WebAuthn is supported');
 
-        // Show loading state
-        otpSubmitBtn.disabled = true;
-        otpSubmitBtn.innerHTML = BUTTON_STATES.AUTHENTICATING_PASSKEY;
-        showOtpMessage(MESSAGES.PASSKEY_AUTHENTICATING, 'info');
+        if (!startedFromStartScreen) {
+            otpSubmitBtn.disabled = true;
+            otpSubmitBtn.innerHTML = BUTTON_STATES.AUTHENTICATING_PASSKEY;
+            showOtpMessage(MESSAGES.PASSKEY_AUTHENTICATING, 'info');
+        }
 
-        // Parse request options from JSON (handles base64 to ArrayBuffer conversion)
-        console.log('Parsing request options');
         const credentialRequestOptions = PublicKeyCredential.parseRequestOptionsFromJSON(loginOptions);
-        console.log('Parsed request options:', credentialRequestOptions);
-
-        // Get the credential
-        console.log('Getting credential...');
         const credential = await navigator.credentials.get({
             publicKey: credentialRequestOptions
         });
-        console.log('Credential retrieved:', credential);
 
         if (!credential) {
-            console.log('Credential retrieval returned null');
-            showOtpMessage(MESSAGES.PASSKEY_CANCELLED, 'error');
-            return;
+            throw new Error(MESSAGES.PASSKEY_CANCELLED);
         }
 
-        // Convert credential to JSON format using official method
-        console.log('Converting credential to JSON format');
-        const authenticationResponseJSON = credential.toJSON();
-        console.log('Authentication response JSON:', authenticationResponseJSON);
-
-        // Complete authentication
-        console.log('Completing authentication...');
-        await completeAuthentication(sessionId, authenticationResponseJSON);
-
+        await completeAuthentication(sessionId, credential.toJSON());
     } catch (error) {
         console.error('Passkey authentication failed:', error);
-        
-        let errorMessage;
+
+        let errorMessage = MESSAGES.PASSKEY_FAILED;
         if (error.name === 'NotAllowedError') {
-            console.log('Passkey authentication not allowed by user');
             errorMessage = MESSAGES.PASSKEY_CANCELLED;
-        } else if (error.name === 'NotSupportedError') {
-            console.log('Passkey not supported');
+        } else if (error.name === 'NotSupportedError' || error.message === MESSAGES.PASSKEY_NOT_SUPPORTED) {
             errorMessage = MESSAGES.PASSKEY_NOT_SUPPORTED;
-        } else {
-            console.log('General passkey authentication error:', error.message);
-            errorMessage = MESSAGES.PASSKEY_FAILED;
         }
-        
-        // Show error message on email screen after redirecting if we're on start screen, otherwise on OTP screen
-        if (startScreen.classList.contains('active')) {
-            console.log('Fallback to email flow after passkey error');
+
+        if (startedFromStartScreen) {
             showEmailScreen();
             showEmailMessage(errorMessage, 'error');
         } else {
             showOtpMessage(errorMessage, 'error');
         }
     } finally {
-        // Reset button state
-        if (otpSubmitBtn) {
-            otpSubmitBtn.disabled = false;
-            otpSubmitBtn.innerHTML = BUTTON_STATES.VERIFY_CODE;
+        if (screens.otp.classList.contains('active')) {
+            otpSubmitBtn.innerHTML = BUTTON_STATES.CONTINUE;
+            syncOtpValue();
         }
-        // Reset continue button state if we're on start screen
-        if (startScreen.classList.contains('active')) {
+
+        if (screens.start.classList.contains('active')) {
             continueBtn.disabled = false;
-            continueBtn.innerHTML = 'Continue';
+            continueBtn.innerHTML = BUTTON_STATES.LOGIN;
         }
     }
 }
 
-// Complete authentication with the API
 async function completeAuthentication(sessionId, credentialResponse) {
-    console.log('Completing authentication with API for sessionId:', sessionId);
     try {
-        console.log('Sending authentication completion request to:', `${API_BASE_URL}${API_ENDPOINTS.AUTHENTICATION_COMPLETE}`);
-        const requestBody = {
-            sessionId: sessionId,
-            AuthenticationResponseJSON: JSON.stringify(credentialResponse),
-            credentialId: credentialResponse.id
-        };
-        console.log('Request body:', requestBody);
-
         const response = await httpClient.fetch(`${API_BASE_URL}${API_ENDPOINTS.AUTHENTICATION_COMPLETE}`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/json'
             },
-            body: JSON.stringify(requestBody)
+            body: JSON.stringify({
+                sessionId,
+                AuthenticationResponseJSON: JSON.stringify(credentialResponse),
+                credentialId: credentialResponse.id
+            })
         });
-        console.log('Authentication completion response status:', response.status);
 
-        if (response.ok) {
-            const data = await response.json();
-            console.log('Authentication completed successfully, response data:', data);
-            handleLoginSuccess(data.accessToken, data.refreshToken);
-        } else {
+        if (!response.ok) {
             const errorText = await response.text();
-            console.log('Authentication completion failed:', response.status, errorText);
-            showOtpMessage(`Authentication failed: ${errorText || 'Unknown error'}`, 'error');
+            showAuthenticationError(`Authentication failed: ${extractResponseMessage(errorText, 'Unknown error')}`);
+            return;
         }
+
+        const data = await response.json();
+        handleLoginSuccess(data.accessToken, data.refreshToken);
     } catch (error) {
         console.error('Authentication completion failed:', error);
-        if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            console.log('Connection error during authentication completion');
-            showOtpMessage(MESSAGES.CONNECTION_ERROR, 'error');
-        } else {
-            console.log('General authentication completion error:', error.message);
-            showOtpMessage(MESSAGES.AUTHENTICATION_FAILED, 'error');
-        }
+        showAuthenticationError(error instanceof TypeError ? MESSAGES.CONNECTION_ERROR : MESSAGES.AUTHENTICATION_FAILED);
     }
 }
 
-// Handle successful login
 function handleLoginSuccess(accessToken, refreshToken) {
-    // Store tokens (you might want to use sessionStorage or localStorage)
     console.log('Login successful. Tokens received:', { accessToken, refreshToken });
-    console.log('Handling login success');
-    
-    // Set knownUser cookie
     setCookie('knownUser', 'true');
-    console.log('knownUser cookie set to true');
-    
-    showOtpMessage(MESSAGES.AUTHENTICATION_SUCCESS, 'success');
-    
-    // Show login welcome screen after successful login
-    console.log('Showing login welcome screen after successful login');
     showLoginWelcomeScreen();
 }
 
-
+setActiveScreen('start', screens.start);
+syncOtpValue();

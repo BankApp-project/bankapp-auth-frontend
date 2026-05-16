@@ -1,0 +1,109 @@
+/*
+ * Figma style extraction (frame 5)
+ * Source: .ai/figma/frame-5.full.json
+ * Node: 2446:527
+ * Generated: 2026-05-16
+ *
+ * This file contains reusable style tokens only.
+ * It is not wired into runtime styles by default.
+ */
+
+:root {
+  /* Palette */
+  --f5-color-page-bg: #fbfdff;
+  --f5-color-surface-soft: #e9f4ff;
+  --f5-color-accent: #0a80ed;
+  --f5-color-text-primary: #141459;
+  --f5-color-on-accent: #f5faff;
+
+  /* Typography */
+  --f5-font-family-base: "Roboto", "Segoe UI", sans-serif;
+  --f5-font-weight-regular: 400;
+  --f5-font-weight-semibold: 600;
+  --f5-font-size-heading: 24px;
+  --f5-line-height-heading: 28.125px;
+  --f5-font-size-button: 18px;
+  --f5-line-height-button: 24px;
+  --f5-font-size-footer: 16px;
+  --f5-line-height-footer: 18.75px;
+
+  /* Elevation */
+  --f5-shadow-button: 0 3px 2px rgba(84, 120, 153, 0.2);
+
+  /* Core frame geometry */
+  --f5-frame-width: 1934px;
+  --f5-frame-height: 1080px;
+  --f5-content-column-width: 713px;
+  --f5-content-column-height: 990px;
+  --f5-content-column-offset-x: 605px;
+  --f5-content-column-offset-y: 0px;
+  --f5-content-padding-top: 150px;
+  --f5-content-padding-bottom: 150px;
+  --f5-content-stack-gap: 88px;
+
+  /* Brand block + CTA */
+  --f5-brand-stack-width: 713px;
+  --f5-brand-stack-height: 187.546875px;
+  --f5-brand-stack-gap: 8px;
+  --f5-logo-width: 360.833984375px;
+  --f5-logo-height: 91.546875px;
+  --f5-logo-gap-from-title: 32px;
+  --f5-button-width: 361px;
+  --f5-button-height: 48px;
+  --f5-button-radius: 8px;
+  --f5-button-padding-inline: 16px;
+  --f5-button-padding-block: 8px;
+  --f5-button-content-gap: 10px;
+
+  /* Footer */
+  --f5-footer-bar-height: 45px;
+  --f5-footer-text-width: 478px;
+}
+
+/*
+ * Raw top-level geometry tokens (relative to frame origin 0,0 at node 2446:527)
+ * Keeps layer naming from Figma for lossless reuse.
+ */
+:root {
+  --f5-rect-254-x: 355px;
+  --f5-rect-254-y: 149px;
+  --f5-rect-254-width: 1225px;
+  --f5-rect-254-height: 931px;
+  --f5-rect-254-corners: 20px 20px 0 0;
+
+  --f5-rect-278-x: 225px;
+  --f5-rect-278-y: 836px;
+  --f5-rect-278-width: 1484px;
+  --f5-rect-278-height: 244px;
+  --f5-rect-278-corners: 20px 20px 0 0;
+
+  --f5-rect-253-x: 604px;
+  --f5-rect-253-y: -20px;
+  --f5-rect-253-width: 715px;
+  --f5-rect-253-height: 1026px;
+
+  --f5-rect-256-x: 605px;
+  --f5-rect-256-y: 121px;
+  --f5-rect-256-width: 713px;
+  --f5-rect-256-height: 65px;
+
+  --f5-rect-279-x: 605px;
+  --f5-rect-279-y: 816px;
+  --f5-rect-279-width: 713px;
+  --f5-rect-279-height: 173px;
+
+  --f5-rect-288-x: 605px;
+  --f5-rect-288-y: 205px;
+  --f5-rect-288-width: 713px;
+  --f5-rect-288-height: 173px;
+
+  --f5-rect-252-x: 1px;
+  --f5-rect-252-y: 989px;
+  --f5-rect-252-width: 1920px;
+  --f5-rect-252-height: 45px;
+
+  --f5-frame-336-x: 1px;
+  --f5-frame-336-y: 990px;
+  --f5-frame-336-width: 1919px;
+  --f5-frame-336-height: 90px;
+}
